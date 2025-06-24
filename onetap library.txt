@@ -1,19 +1,12 @@
---✅ Minimalistic Onetap-style GUI Library
---📦 Everything in one file, no external loading
---🖱️ GUI is draggable, dark theme, blurred background
---🌫️ Onetap-style visual theme
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
---🌫️ Add blur effect to background
 local blur = Instance.new("BlurEffect")
 blur.Size = 12
 blur.Parent = game:GetService("Lighting")
 
---💠 GUI Main Container
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "OnetapGUI"
 screenGui.ResetOnSpawn = false
@@ -21,7 +14,6 @@ screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
---🎛️ Create main window
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 500, 0, 400)
 mainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
@@ -35,7 +27,6 @@ mainFrame.Parent = screenGui
 local corner = Instance.new("UICorner", mainFrame)
 corner.CornerRadius = UDim.new(0, 8)
 
--- 🖱️ Make draggable
 local dragging, dragInput, dragStart, startPos
 mainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -58,7 +49,6 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
---📁 Tab system
 local tabs = {}
 local currentTab = nil
 local tabButtonsFrame = Instance.new("Frame")
@@ -72,7 +62,6 @@ UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 2)
 UIListLayout.Parent = tabButtonsFrame
 
---📌 Tab Function
 local function AddTab(tabName)
     local tabButton = Instance.new("TextButton")
     tabButton.Size = UDim2.new(1, 0, 0, 30)
@@ -107,7 +96,6 @@ local function AddTab(tabName)
     return tabFrame
 end
 
---📦 Component: Toggle
 local function AddToggle(tab, text, callback)
     local toggle = Instance.new("TextButton")
     toggle.Size = UDim2.new(0, 300, 0, 30)
@@ -127,7 +115,6 @@ local function AddToggle(tab, text, callback)
     end)
 end
 
---📦 Component: Button
 local function AddButton(tab, text, callback)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(0, 300, 0, 30)
@@ -144,7 +131,6 @@ local function AddButton(tab, text, callback)
     end)
 end
 
---📦 Component: Slider
 local function AddSlider(tab, text, min, max, default, callback)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0, 300, 0, 20)
@@ -188,7 +174,6 @@ local function AddSlider(tab, text, min, max, default, callback)
     end)
 end
 
---🔧 Return interface
 return {
     AddTab = AddTab,
     AddToggle = AddToggle,
