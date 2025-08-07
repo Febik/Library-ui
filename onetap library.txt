@@ -69,7 +69,7 @@ local Pages = create("Frame", {
 function GuiLibrary:AddTab(tabData)
 	local tab = {}
 	tab.Name = tabData.Name or "New Tab"
-	tab.Type = tabData.Тип or 0
+	tab.Type = tabData.TIP or 0
 
 	local Button = create("TextButton", {
 		Text = tab.Name,
@@ -292,3 +292,4 @@ function GuiLibrary:InitConfigPage(tabPage)
 end
 
 return GuiLibrary
+
