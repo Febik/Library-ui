@@ -1,295 +1,744 @@
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local LocalPlayer = Players.LocalPlayer
+-- Vozoid GUI Library
+local VozoidGUI = {}
+VozoidGUI.__index = VozoidGUI
 
-local SaveFolder = "Memesenserbx/"
-if not isfolder(SaveFolder) then
-    makefolder(SaveFolder)
-end
+-- Configuration system
+VozoidGUI.Configs = {}
+VozoidGUI.CurrentConfig = "Default"
 
-local GuiLibrary = {}
-GuiLibrary.Tabs = {}
-GuiLibrary.Configs = {}
-
--- Utility
-local function create(obj, props)
-	local inst = Instance.new(obj)
-	for i, v in pairs(props) do
-		inst[i] = v
-	end
-	return inst
-end
-
--- Theme
-local theme = {
-	Background = Color3.fromRGB(25, 25, 25),
-	Frame = Color3.fromRGB(30, 30, 30),
-	Button = Color3.fromRGB(40, 40, 40),
-	Text = Color3.fromRGB(255, 255, 255)
+-- Theme settings (customizable)
+VozoidGUI.Theme = {
+    Accent = Color3.fromRGB(0, 120, 215),
+    WindowBackground = Color3.fromRGB(40, 40, 40),
+    WindowBorder = Color3.fromRGB(20, 20, 20),
+    TabBackground = Color3.fromRGB(35, 35, 35),
+    TabBorder = Color3.fromRGB(25, 25, 25),
+    TabToggleBackground = Color3.fromRGB(45, 45, 45),
+    SectionBackground = Color3.fromRGB(30, 30, 30),
+    SectionBorder = Color3.fromRGB(50, 50, 50),
+    Text = Color3.fromRGB(255, 255, 255),
+    DisabledText = Color3.fromRGB(150, 150, 150),
+    ObjectBackground = Color3.fromRGB(45, 45, 45),
+    ObjectBorder = Color3.fromRGB(60, 60, 60),
+    DropdownOptionBackground = Color3.fromRGB(50, 50, 50)
 }
 
--- GUI
-local MainGui = create("ScreenGui", {
-	Name = "MyGuiLibrary",
-	Parent = CoreGui,
-	ResetOnSpawn = false,
-})
-
-local MainFrame = create("Frame", {
-	Name = "MainFrame",
-	Size = UDim2.new(0, 600, 0, 400),
-	Position = UDim2.new(0.5, -300, 0.5, -200),
-	BackgroundColor3 = theme.Background,
-	BorderSizePixel = 0,
-	Draggable = true,
-	Active = true,
-	Parent = MainGui
-})
-
-local TabHolder = create("Frame", {
-	Name = "TabHolder",
-	Size = UDim2.new(0, 120, 1, 0),
-	BackgroundColor3 = theme.Frame,
-	BorderSizePixel = 0,
-	Parent = MainFrame
-})
-
-local Pages = create("Frame", {
-	Name = "Pages",
-	Size = UDim2.new(1, -120, 1, 0),
-	Position = UDim2.new(0, 120, 0, 0),
-	BackgroundTransparency = 1,
-	Parent = MainFrame
-})
-
--- AddTab
-function GuiLibrary:AddTab(tabData)
-	local tab = {}
-	tab.Name = tabData.Name or "New Tab"
-	tab.Type = tabData.TIP or 0
-
-	local Button = create("TextButton", {
-		Text = tab.Name,
-		Size = UDim2.new(1, 0, 0, 30),
-		BackgroundColor3 = theme.Button,
-		BorderSizePixel = 0,
-		TextColor3 = theme.Text,
-		Font = Enum.Font.SourceSans,
-		TextSize = 16,
-		Parent = TabHolder
-	})
-
-	local Page = create("ScrollingFrame", {
-		Size = UDim2.new(1, 0, 1, 0),
-		CanvasSize = UDim2.new(0, 0, 0, 0),
-		ScrollBarThickness = 4,
-		BackgroundTransparency = 1,
-		Visible = false,
-		Parent = Pages
-	})
-
-	Button.MouseButton1Click:Connect(function()
-		for _, p in pairs(Pages:GetChildren()) do
-			p.Visible = false
-		end
-		Page.Visible = true
-	end)
-
-	table.insert(GuiLibrary.Tabs, {Tab = tab, Button = Button, Page = Page})
-
-	if tab.Type == 11 then
-		GuiLibrary:InitConfigPage(Page)
-	end
-
-	return {
-		Page = Page,
-		Button = Button
-	}
+-- Utility functions
+local function Create(class, properties)
+    local object = Instance.new(class)
+    for property, value in pairs(properties) do
+        object[property] = value
+    end
+    return object
 end
 
--- AddCheckbox
-function GuiLibrary:AddCheckbox(tabPage, name, default, callback)
-	local box = create("TextButton", {
-		Text = "[ ] " .. name,
-		Size = UDim2.new(1, -10, 0, 25),
-		BackgroundColor3 = theme.Button,
-		BorderSizePixel = 0,
-		TextColor3 = theme.Text,
-		Font = Enum.Font.SourceSans,
-		TextSize = 16,
-		Parent = tabPage
-	})
-
-	local state = default or false
-	local function updateText()
-		box.Text = (state and "[✓] " or "[ ] ") .. name
-	end
-	updateText()
-
-	box.MouseButton1Click:Connect(function()
-		state = not state
-		updateText()
-		if callback then callback(state) end
-	end)
+local function Tween(object, properties, duration)
+    local tweenInfo = TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = game:GetService("TweenService"):Create(object, tweenInfo, properties)
+    tween:Play()
+    return tween
 end
 
--- AddDropdown
-function GuiLibrary:AddDropdown(tabPage, name, items, callback)
-	local holder = create("Frame", {
-		Size = UDim2.new(1, -10, 0, 25 + #items * 20),
-		BackgroundColor3 = theme.Button,
-		BorderSizePixel = 0,
-		Parent = tabPage
-	})
-
-	local label = create("TextLabel", {
-		Text = name,
-		Size = UDim2.new(1, 0, 0, 25),
-		BackgroundTransparency = 1,
-		TextColor3 = theme.Text,
-		Font = Enum.Font.SourceSans,
-		TextSize = 16,
-		Parent = holder
-	})
-
-	for i, v in ipairs(items) do
-		local item = create("TextButton", {
-			Text = v,
-			Size = UDim2.new(1, 0, 0, 20),
-			Position = UDim2.new(0, 0, 0, 25 + (i - 1) * 20),
-			BackgroundTransparency = 1,
-			TextColor3 = theme.Text,
-			Font = Enum.Font.SourceSans,
-			TextSize = 14,
-			Parent = holder
-		})
-		item.MouseButton1Click:Connect(function()
-			if callback then callback(v) end
-		end)
-	end
+-- Main GUI creation
+function VozoidGUI:CreateWindow(name, keybind)
+    keybind = keybind or Enum.KeyCode.Insert
+    local self = setmetatable({}, VozoidGUI)
+    
+    -- Main screen GUI
+    self.ScreenGui = Create("ScreenGui", {
+        Name = "VozoidGUI",
+        DisplayOrder = 999,
+        Parent = game:GetService("CoreGui")
+    })
+    
+    -- Main frame
+    self.MainFrame = Create("Frame", {
+        Name = "MainFrame",
+        Size = UDim2.new(0, 600, 0, 400),
+        Position = UDim2.new(0.5, -300, 0.5, -200),
+        BackgroundColor3 = self.Theme.WindowBackground,
+        BorderColor3 = self.Theme.WindowBorder,
+        BorderSizePixel = 1,
+        Parent = self.ScreenGui
+    })
+    
+    -- Title bar
+    self.TitleBar = Create("Frame", {
+        Name = "TitleBar",
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = self.Theme.Accent,
+        BorderSizePixel = 0,
+        Parent = self.MainFrame
+    })
+    
+    self.Title = Create("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -60, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+        Parent = self.TitleBar
+    })
+    
+    self.CloseButton = Create("TextButton", {
+        Name = "CloseButton",
+        Size = UDim2.new(0, 30, 1, 0),
+        Position = UDim2.new(1, -30, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(200, 50, 50),
+        BorderSizePixel = 0,
+        Text = "X",
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+        Parent = self.TitleBar
+    })
+    
+    -- Tab system
+    self.Tabs = {}
+    self.CurrentTab = nil
+    
+    self.TabContainer = Create("Frame", {
+        Name = "TabContainer",
+        Size = UDim2.new(1, 0, 0, 40),
+        Position = UDim2.new(0, 0, 0, 30),
+        BackgroundColor3 = self.Theme.TabBackground,
+        BorderColor3 = self.Theme.TabBorder,
+        BorderSizePixel = 1,
+        Parent = self.MainFrame
+    })
+    
+    self.TabListLayout = Create("UIListLayout", {
+        Name = "TabListLayout",
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = self.TabContainer
+    })
+    
+    self.ContentContainer = Create("Frame", {
+        Name = "ContentContainer",
+        Size = UDim2.new(1, -20, 1, -70),
+        Position = UDim2.new(0, 10, 0, 70),
+        BackgroundTransparency = 1,
+        Parent = self.MainFrame
+    })
+    
+    self.ContentScrolling = Create("ScrollingFrame", {
+        Name = "ContentScrolling",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 5,
+        ScrollBarImageColor3 = self.Theme.Accent,
+        Parent = self.ContentContainer
+    })
+    
+    self.ContentLayout = Create("UIListLayout", {
+        Name = "ContentLayout",
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 10),
+        Parent = self.ContentScrolling
+    })
+    
+    -- Make window draggable
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    self.TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.MainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    self.TitleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStart
+            self.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
+                                              startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    -- Close button functionality
+    self.CloseButton.MouseButton1Click:Connect(function()
+        self.ScreenGui.Enabled = not self.ScreenGui.Enabled
+    end)
+    
+    -- Keybind toggle
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
+        if input.KeyCode == keybind then
+            self.ScreenGui.Enabled = not self.ScreenGui.Enabled
+        end
+    end)
+    
+    -- Auto-resize scrolling content
+    self.ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        self.ContentScrolling.CanvasSize = UDim2.new(0, 0, 0, self.ContentLayout.AbsoluteContentSize.Y + 10)
+    end)
+    
+    return self
 end
 
--- AddSlider
-function GuiLibrary:AddSlider(tabPage, name, min, max, default, callback)
-	local label = create("TextLabel", {
-		Text = name .. ": " .. default,
-		Size = UDim2.new(1, -10, 0, 20),
-		BackgroundTransparency = 1,
-		TextColor3 = theme.Text,
-		Font = Enum.Font.SourceSans,
-		TextSize = 14,
-		Parent = tabPage
-	})
-
-	local slider = create("TextButton", {
-		Text = "",
-		Size = UDim2.new(1, -10, 0, 10),
-		BackgroundColor3 = theme.Button,
-		BorderSizePixel = 0,
-		Parent = tabPage
-	})
-
-	local dragging = false
-	local value = default
-
-	slider.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-		end
-	end)
-
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			local percent = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-			value = math.floor(min + (max - min) * percent)
-			label.Text = name .. ": " .. tostring(value)
-			if callback then callback(value) end
-		end
-	end)
+-- Tab creation
+function VozoidGUI:CreateTab(name)
+    local tab = {}
+    
+    tab.Button = Create("TextButton", {
+        Name = name .. "Tab",
+        Size = UDim2.new(0, 100, 1, 0),
+        BackgroundColor3 = self.Theme.TabBackground,
+        BorderColor3 = self.Theme.TabBorder,
+        BorderSizePixel = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        LayoutOrder = #self.Tabs + 1,
+        Parent = self.TabContainer
+    })
+    
+    tab.Content = Create("Frame", {
+        Name = name .. "Content",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = false,
+        Parent = self.ContentScrolling
+    })
+    
+    tab.ContentLayout = Create("UIListLayout", {
+        Name = "ContentLayout",
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 10),
+        Parent = tab.Content
+    })
+    
+    tab.Button.MouseButton1Click:Connect(function()
+        self:SwitchTab(tab)
+    end)
+    
+    table.insert(self.Tabs, tab)
+    
+    if not self.CurrentTab then
+        self:SwitchTab(tab)
+    end
+    
+    return tab
 end
 
--- Config Page
-function GuiLibrary:InitConfigPage(tabPage)
-	local configList = create("ScrollingFrame", {
-		Size = UDim2.new(0, 180, 1, -40),
-		Position = UDim2.new(0, 0, 0, 0),
-		CanvasSize = UDim2.new(0, 0, 0, 0),
-		ScrollBarThickness = 4,
-		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-		Parent = tabPage
-	})
-
-	local function refreshConfigs()
-		configList:ClearAllChildren()
-		local files = listfiles(SaveFolder)
-		for _, file in pairs(files) do
-			local filename = file:match(SaveFolder .. "(.*).json")
-			if filename then
-				local btn = create("TextButton", {
-					Text = filename,
-					Size = UDim2.new(1, 0, 0, 25),
-					BackgroundColor3 = theme.Button,
-					TextColor3 = theme.Text,
-					Font = Enum.Font.SourceSans,
-					TextSize = 14,
-					Parent = configList
-				})
-				btn.MouseButton1Click:Connect(function()
-					GuiLibrary.CurrentConfig = filename
-				end)
-			end
-		end
-	end
-	refreshConfigs()
-
-	local actions = {
-		{ "Create", function()
-			local name = tostring(math.random(10000, 99999))
-			writefile(SaveFolder .. name .. ".json", "{}")
-			refreshConfigs()
-		end },
-		{ "Save", function()
-			if GuiLibrary.CurrentConfig then
-				writefile(SaveFolder .. GuiLibrary.CurrentConfig .. ".json", HttpService:JSONEncode(GuiLibrary.Configs))
-			end
-		end },
-		{ "Load", function()
-			if GuiLibrary.CurrentConfig and isfile(SaveFolder .. GuiLibrary.CurrentConfig .. ".json") then
-				local data = readfile(SaveFolder .. GuiLibrary.CurrentConfig .. ".json")
-				GuiLibrary.Configs = HttpService:JSONDecode(data)
-			end
-		end },
-		{ "Delete", function()
-			if GuiLibrary.CurrentConfig and isfile(SaveFolder .. GuiLibrary.CurrentConfig .. ".json") then
-				delfile(SaveFolder .. GuiLibrary.CurrentConfig .. ".json")
-				GuiLibrary.CurrentConfig = nil
-				refreshConfigs()
-			end
-		end }
-	}
-
-	for i, act in ipairs(actions) do
-		create("TextButton", {
-			Text = act[1],
-			Size = UDim2.new(0, 100, 0, 25),
-			Position = UDim2.new(0, 200, 0, (i - 1) * 30),
-			BackgroundColor3 = theme.Button,
-			TextColor3 = theme.Text,
-			Font = Enum.Font.SourceSans,
-			TextSize = 14,
-			Parent = tabPage
-	 }).MouseButton1Click:Connect(act[2])
-	end
+function VozoidGUI:SwitchTab(tab)
+    if self.CurrentTab then
+        self.CurrentTab.Content.Visible = false
+        Tween(self.CurrentTab.Button, {BackgroundColor3 = self.Theme.TabBackground})
+    end
+    
+    self.CurrentTab = tab
+    tab.Content.Visible = true
+    Tween(tab.Button, {BackgroundColor3 = self.Theme.TabToggleBackground})
 end
 
-return GuiLibrary
+-- Section creation
+function VozoidGUI:CreateSection(tab, name)
+    local section = {}
+    
+    section.Main = Create("Frame", {
+        Name = name .. "Section",
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundColor3 = self.Theme.SectionBackground,
+        BorderColor3 = self.Theme.SectionBorder,
+        BorderSizePixel = 1,
+        Parent = tab.Content,
+        LayoutOrder = #tab.Content:GetChildren()
+    })
+    
+    section.Title = Create("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -20, 0, 25),
+        Position = UDim2.new(0, 10, 0, 5),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = section.Main
+    })
+    
+    section.Content = Create("Frame", {
+        Name = "Content",
+        Size = UDim2.new(1, -20, 0, 0),
+        Position = UDim2.new(0, 10, 0, 30),
+        BackgroundTransparency = 1,
+        Parent = section.Main
+    })
+    
+    section.Layout = Create("UIListLayout", {
+        Name = "Layout",
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5),
+        Parent = section.Content
+    })
+    
+    section.Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        section.Main.Size = UDim2.new(1, 0, 0, section.Layout.AbsoluteContentSize.Y + 35)
+        section.Content.Size = UDim2.new(1, 0, 0, section.Layout.AbsoluteContentSize.Y)
+    end)
+    
+    return section
+end
 
+-- GUI Elements
+function VozoidGUI:CreateCheckbox(section, name, default, callback)
+    local checkbox = {}
+    checkbox.Value = default or false
+    
+    local container = Create("Frame", {
+        Name = name .. "Checkbox",
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Parent = section.Content,
+        LayoutOrder = #section.Content:GetChildren()
+    })
+    
+    local box = Create("Frame", {
+        Name = "Box",
+        Size = UDim2.new(0, 15, 0, 15),
+        Position = UDim2.new(0, 0, 0.5, -7.5),
+        BackgroundColor3 = self.Theme.ObjectBackground,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Parent = container
+    })
+    
+    local check = Create("TextLabel", {
+        Name = "Check",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "✓",
+        TextColor3 = self.Theme.Accent,
+        Font = Enum.Font.GothamBold,
+        TextSize = 12,
+        Visible = checkbox.Value,
+        Parent = box
+    })
+    
+    local label = Create("TextLabel", {
+        Name = "Label",
+        Size = UDim2.new(1, -25, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = container
+    })
+    
+    local function updateVisual()
+        check.Visible = checkbox.Value
+        if checkbox.Value then
+            Tween(box, {BackgroundColor3 = self.Theme.Accent})
+        else
+            Tween(box, {BackgroundColor3 = self.Theme.ObjectBackground})
+        end
+    end
+    
+    box.MouseButton1Click:Connect(function()
+        checkbox.Value = not checkbox.Value
+        updateVisual()
+        if callback then callback(checkbox.Value) end
+        self:SaveConfig()
+    end)
+    
+    label.MouseButton1Click:Connect(function()
+        checkbox.Value = not checkbox.Value
+        updateVisual()
+        if callback then callback(checkbox.Value) end
+        self:SaveConfig()
+    end)
+    
+    updateVisual()
+    
+    return checkbox
+end
+
+function VozoidGUI:CreateSlider(section, name, min, max, default, callback)
+    local slider = {}
+    slider.Value = default or min
+    
+    local container = Create("Frame", {
+        Name = name .. "Slider",
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundTransparency = 1,
+        Parent = section.Content,
+        LayoutOrder = #section.Content:GetChildren()
+    })
+    
+    local label = Create("TextLabel", {
+        Name = "Label",
+        Size = UDim2.new(1, 0, 0, 15),
+        BackgroundTransparency = 1,
+        Text = name .. ": " .. tostring(slider.Value),
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = container
+    })
+    
+    local track = Create("Frame", {
+        Name = "Track",
+        Size = UDim2.new(1, 0, 0, 5),
+        Position = UDim2.new(0, 0, 0, 20),
+        BackgroundColor3 = self.Theme.ObjectBackground,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Parent = container
+    })
+    
+    local fill = Create("Frame", {
+        Name = "Fill",
+        Size = UDim2.new((slider.Value - min) / (max - min), 0, 1, 0),
+        BackgroundColor3 = self.Theme.Accent,
+        BorderSizePixel = 0,
+        Parent = track
+    })
+    
+    local handle = Create("Frame", {
+        Name = "Handle",
+        Size = UDim2.new(0, 10, 0, 15),
+        Position = UDim2.new((slider.Value - min) / (max - min), -5, 0, -5),
+        BackgroundColor3 = self.Theme.Text,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Parent = track
+    })
+    
+    local dragging = false
+    
+    local function updateValue(value)
+        slider.Value = math.clamp(value, min, max)
+        local percent = (slider.Value - min) / (max - min)
+        
+        fill.Size = UDim2.new(percent, 0, 1, 0)
+        handle.Position = UDim2.new(percent, -5, 0, -5)
+        label.Text = name .. ": " .. tostring(math.floor(slider.Value * 100) / 100)
+        
+        if callback then callback(slider.Value) end
+        self:SaveConfig()
+    end
+    
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            local percent = (input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X
+            updateValue(min + percent * (max - min))
+        end
+    end)
+    
+    track.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local percent = (input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X
+            updateValue(min + percent * (max - min))
+        end
+    end)
+    
+    updateValue(default or min)
+    
+    return slider
+end
+
+function VozoidGUI:CreateDropdown(section, name, options, default, callback)
+    local dropdown = {}
+    dropdown.Value = default or options[1]
+    dropdown.Open = false
+    
+    local container = Create("Frame", {
+        Name = name .. "Dropdown",
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Parent = section.Content,
+        LayoutOrder = #section.Content:GetChildren()
+    })
+    
+    local mainButton = Create("TextButton", {
+        Name = "MainButton",
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundColor3 = self.Theme.ObjectBackground,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Text = name .. ": " .. dropdown.Value,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        Parent = container
+    })
+    
+    local optionsFrame = Create("Frame", {
+        Name = "Options",
+        Size = UDim2.new(1, 0, 0, 0),
+        Position = UDim2.new(0, 0, 0, 25),
+        BackgroundColor3 = self.Theme.DropdownOptionBackground,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Visible = false,
+        Parent = container
+    })
+    
+    local optionsLayout = Create("UIListLayout", {
+        Name = "OptionsLayout",
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = optionsFrame
+    })
+    
+    local function updateOptions()
+        optionsFrame:ClearAllChildren()
+        
+        for i, option in ipairs(options) do
+            local optionButton = Create("TextButton", {
+                Name = option,
+                Size = UDim2.new(1, 0, 0, 20),
+                BackgroundColor3 = self.Theme.DropdownOptionBackground,
+                BorderSizePixel = 0,
+                Text = option,
+                TextColor3 = self.Theme.Text,
+                Font = Enum.Font.Gotham,
+                TextSize = 12,
+                LayoutOrder = i,
+                Parent = optionsFrame
+            })
+            
+            optionButton.MouseButton1Click:Connect(function()
+                dropdown.Value = option
+                mainButton.Text = name .. ": " .. dropdown.Value
+                dropdown.Open = false
+                optionsFrame.Visible = false
+                if callback then callback(dropdown.Value) end
+                self:SaveConfig()
+            end)
+            
+            optionButton.MouseEnter:Connect(function()
+                Tween(optionButton, {BackgroundColor3 = self.Theme.Accent})
+            end)
+            
+            optionButton.MouseLeave:Connect(function()
+                Tween(optionButton, {BackgroundColor3 = self.Theme.DropdownOptionBackground})
+            end)
+        end
+        
+        optionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            optionsFrame.Size = UDim2.new(1, 0, 0, optionsLayout.AbsoluteContentSize.Y)
+        end)
+    end
+    
+    mainButton.MouseButton1Click:Connect(function()
+        dropdown.Open = not dropdown.Open
+        optionsFrame.Visible = dropdown.Open
+    end)
+    
+    updateOptions()
+    
+    return dropdown
+end
+
+function VozoidGUI:CreateButton(section, name, callback)
+    local button = Create("TextButton", {
+        Name = name .. "Button",
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundColor3 = self.Theme.ObjectBackground,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        Parent = section.Content,
+        LayoutOrder = #section.Content:GetChildren()
+    })
+    
+    button.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+    
+    button.MouseEnter:Connect(function()
+        Tween(button, {BackgroundColor3 = self.Theme.Accent})
+    end)
+    
+    button.MouseLeave:Connect(function()
+        Tween(button, {BackgroundColor3 = self.Theme.ObjectBackground})
+    end)
+    
+    return button
+end
+
+function VozoidGUI:CreateTextBox(section, name, placeholder, callback)
+    local textbox = {}
+    
+    local container = Create("Frame", {
+        Name = name .. "TextBox",
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Parent = section.Content,
+        LayoutOrder = #section.Content:GetChildren()
+    })
+    
+    local label = Create("TextLabel", {
+        Name = "Label",
+        Size = UDim2.new(0.4, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = container
+    })
+    
+    local input = Create("TextBox", {
+        Name = "Input",
+        Size = UDim2.new(0.6, 0, 1, 0),
+        Position = UDim2.new(0.4, 0, 0, 0),
+        BackgroundColor3 = self.Theme.ObjectBackground,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Text = "",
+        PlaceholderText = placeholder or "Enter text...",
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        Parent = container
+    })
+    
+    input.FocusLost:Connect(function()
+        if callback then callback(input.Text) end
+        self:SaveConfig()
+    end)
+    
+    textbox.GetValue = function() return input.Text end
+    textbox.SetValue = function(value) input.Text = value end
+    
+    return textbox
+end
+
+function VozoidGUI:CreateColorPicker(section, name, default, callback)
+    local colorPicker = {}
+    colorPicker.Value = default or Color3.new(1, 1, 1)
+    
+    local container = Create("Frame", {
+        Name = name .. "ColorPicker",
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Parent = section.Content,
+        LayoutOrder = #section.Content:GetChildren()
+    })
+    
+    local label = Create("TextLabel", {
+        Name = "Label",
+        Size = UDim2.new(0.7, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = container
+    })
+    
+    local preview = Create("Frame", {
+        Name = "Preview",
+        Size = UDim2.new(0, 30, 0, 15),
+        Position = UDim2.new(0.7, 0, 0.5, -7.5),
+        BackgroundColor3 = colorPicker.Value,
+        BorderColor3 = self.Theme.ObjectBorder,
+        BorderSizePixel = 1,
+        Parent = container
+    })
+    
+    local colorPickerFrame
+    local isOpen = false
+    
+    local function openColorPicker()
+        if isOpen then return end
+        isOpen = true
+        
+        colorPickerFrame = Create("Frame", {
+            Name = "ColorPickerFrame",
+            Size = UDim2.new(0, 200, 0, 150),
+            Position = UDim2.new(0, preview.AbsolutePosition.X, 0, preview.AbsolutePosition.Y + 20),
+            BackgroundColor3 = self.Theme.WindowBackground,
+            BorderColor3 = self.Theme.WindowBorder,
+            BorderSizePixel = 1,
+            Parent = self.ScreenGui
+        })
+        
+        -- Color picking logic would go here (simplified for example)
+        local closeButton = Create("TextButton", {
+            Name = "CloseButton",
+            Size = UDim2.new(1, 0, 0, 20),
+            Position = UDim2.new(0, 0, 0, 130),
+            BackgroundColor3 = self.Theme.Accent,
+            BorderSizePixel = 0,
+            Text = "Select Color",
+            TextColor3 = self.Theme.Text,
+            Font = Enum.Font.Gotham,
+            TextSize = 12,
+            Parent = colorPickerFrame
+        })
+        
+        closeButton.MouseButton1Click:Connect(function()
+            colorPickerFrame:Destroy()
+            isOpen = false
+        end)
+    end
+    
+    preview.MouseButton1Click:Connect(openColorPicker)
+    
+    return colorPicker
+end
+
+-- Configuration system
+function VozoidGUI:SaveConfig()
+    local config = {}
+    
+    for tabName, tab in pairs(self.Tabs) do
+        config[tabName] = {}
+        -- Save all element values here
+    end
+    
+    VozoidGUI.Configs[VozoidGUI.CurrentConfig] = config
+end
+
+function VozoidGUI:LoadConfig(configName)
+    local config = VozoidGUI.Configs[configName or VozoidGUI.CurrentConfig]
+    if config then
+        -- Load all element values from config
+    end
+end
+
+function VozoidGUI:DeleteConfig(configName)
+    VozoidGUI.Configs[configName] = nil
+end
+
+return VozoidGUI
