@@ -1,8 +1,3 @@
--- Gui to Lua
--- Version: 3.2
-
--- Instances:
-
 local eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B = Instance.new("ScreenGui")
 local BackGround = Instance.new("Frame")
 local LS = Instance.new("TextLabel")
@@ -13,13 +8,9 @@ local TextBox = Instance.new("TextBox")
 local TextButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 local TextLabel = Instance.new("TextLabel")
-
---Properties:
-
 eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B.Name = "eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B"
 eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
 BackGround.Name = "BackGround"
 BackGround.Parent = eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B
 BackGround.BackgroundColor3 = Color3.fromRGB(10, 10, 50)
@@ -28,7 +19,6 @@ BackGround.BorderSizePixel = 0
 BackGround.Position = UDim2.new(0.3, 0, 0.2, 0)
 BackGround.Size = UDim2.new(0, 500, 0, 500)
 BackGround.BackgroundTransparency = 0.1
-
 LS.Name = "LS"
 LS.Parent = BackGround
 LS.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -44,7 +34,6 @@ LS.TextSize = 120.000
 LS.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
 LS.TextStrokeTransparency = 0.8
 LS.TextWrapped = true
-
 ProgressBar.Name = "ProgressBar"
 ProgressBar.Parent = BackGround
 ProgressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -57,7 +46,6 @@ ProgressBar.Font = Enum.Font.Code
 ProgressBar.Text = "Loading"
 ProgressBar.TextColor3 = Color3.fromRGB(194, 194, 194)
 ProgressBar.TextSize = 28.000
-
 BackGroundLoader.Name = "BackGroundLoader"
 BackGroundLoader.Parent = eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B
 BackGroundLoader.BackgroundColor3 = Color3.fromRGB(10, 10, 50)
@@ -67,7 +55,6 @@ BackGroundLoader.Position = UDim2.new(0.2, 0, 0.15, 0)
 BackGroundLoader.Size = UDim2.new(0, 700, 0, 500)
 BackGroundLoader.Visible = false
 BackGroundLoader.BackgroundTransparency = 0.1
-
 ScrollingFrame.Parent = BackGroundLoader
 ScrollingFrame.Active = true
 ScrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 60)
@@ -81,7 +68,6 @@ ScrollingFrame.MidImage = ""
 ScrollingFrame.ScrollBarThickness = 8
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 2, 0)
-
 TextBox.Parent = ScrollingFrame
 TextBox.Active = false
 TextBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
@@ -100,7 +86,6 @@ TextBox.TextSize = 14.000
 TextBox.TextWrapped = true
 TextBox.TextXAlignment = Enum.TextXAlignment.Left
 TextBox.TextYAlignment = Enum.TextYAlignment.Top
-
 TextButton.Parent = BackGroundLoader
 TextButton.BackgroundColor3 = Color3.fromRGB(0, 85, 255)
 TextButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -111,9 +96,7 @@ TextButton.Font = Enum.Font.Jura
 TextButton.Text = "Load Lolsense"
 TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 TextButton.TextSize = 36.000
-
 UICorner.Parent = TextButton
-
 TextLabel.Parent = BackGroundLoader
 TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 TextLabel.BackgroundTransparency = 1.000
@@ -125,62 +108,46 @@ TextLabel.Font = Enum.Font.Jura
 TextLabel.Text = "LS" -- Изменено на LS
 TextLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
 TextLabel.TextSize = 64.000
-
--- // ДОБАВЛЯЕМ СКРУГЛЕНИЯ УГЛОВ
 local BackGroundCorner = Instance.new("UICorner")
 BackGroundCorner.CornerRadius = UDim.new(0, 15)
 BackGroundCorner.Parent = BackGround
-
 local BackGroundLoaderCorner = Instance.new("UICorner")
 BackGroundLoaderCorner.CornerRadius = UDim.new(0, 15)
 BackGroundLoaderCorner.Parent = BackGroundLoader
-
 local ScrollingFrameCorner = Instance.new("UICorner")
 ScrollingFrameCorner.CornerRadius = UDim.new(0, 10)
 ScrollingFrameCorner.Parent = ScrollingFrame
-
--- // ДОБАВЛЯЕМ ТЕНИ И ЭФФЕКТЫ
 local BackGroundStroke = Instance.new("UIStroke")
 BackGroundStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 BackGroundStroke.Color = Color3.fromRGB(0, 170, 255)
 BackGroundStroke.LineJoinMode = Enum.LineJoinMode.Round
 BackGroundStroke.Thickness = 3
 BackGroundStroke.Parent = BackGround
-
 local BackGroundLoaderStroke = Instance.new("UIStroke")
 BackGroundLoaderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 BackGroundLoaderStroke.Color = Color3.fromRGB(0, 170, 255)
 BackGroundLoaderStroke.LineJoinMode = Enum.LineJoinMode.Round
 BackGroundLoaderStroke.Thickness = 3
 BackGroundLoaderStroke.Parent = BackGroundLoader
-
--- // СОЗДАЕМ ВТОРУЮ КНОПКУ ДЛЯ БЕТА-ВЕРСИИ
 local BetaButton = Instance.new("TextButton")
 BetaButton.Name = "BetaButton"
 BetaButton.Parent = BackGroundLoader
-BetaButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0) -- Оранжевый для беты
+BetaButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
 BetaButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
 BetaButton.BorderSizePixel = 0
-BetaButton.Position = UDim2.new(0.57, 0, 0.55, 0) -- Располагаем над обычной кнопкой
+BetaButton.Position = UDim2.new(0.57, 0, 0.55, 0) 
 BetaButton.Size = UDim2.new(0, 250, 0, 60)
 BetaButton.Font = Enum.Font.Jura
 BetaButton.Text = "Load Beta"
 BetaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 BetaButton.TextSize = 36.000
-
 local BetaButtonCorner = Instance.new("UICorner")
 BetaButtonCorner.Parent = BetaButton
-
--- // ССЫЛКИ НА ВЕРСИИ
 local UI_URL_STABLE = "https://raw.githubusercontent.com/Febik/Library-ui/refs/heads/main/aswe"
 local UI_URL_BETA = "https://raw.githubusercontent.com/Febik/Library-ui/refs/heads/main/beta"
-
--- // ФАЙЛОВАЯ СИСТЕМА ДЛЯ ПРОПУСКА ЗАГРУЗКИ
 local LOADED_TAG = "SkipLoadingFileAllLoaded_1q234567890"
 local FOLDER_NAME = "Lolsense"
 local FILE_NAME = "Loaded.txt"
-
--- // GUI объекты
 local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 local GUI = eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B
 local Loading = GUI:WaitForChild("BackGround")
@@ -188,8 +155,6 @@ local prog = Loading:WaitForChild("ProgressBar")
 local Loader = GUI:WaitForChild("BackGroundLoader")
 local Button = Loader:WaitForChild("TextButton")
 local BetaBtn = Loader:WaitForChild("BetaButton")
-
--- // Функция для плавного перемещения GUI
 local function makeDraggable(frame)
     local dragging = false
     local dragInput, mousePos, framePos
@@ -233,12 +198,8 @@ local function makeDraggable(frame)
         end
     end)
 end
-
--- // Применяем функцию перемещения к обоим окнам
 makeDraggable(BackGround)
 makeDraggable(BackGroundLoader)
-
--- // УЛУЧШЕННАЯ АНИМАЦИЯ ЗАГРУЗКИ
 local function createLoadingAnimation()
     local loadingContainer = Instance.new("Frame")
     loadingContainer.Name = "LoadingAnimation"
@@ -288,8 +249,6 @@ local function createLoadingAnimation()
     
     spawn(animateDots)
 end
-
--- // ФИКС ПРОКРУТКИ TEXTBOX
 local function fixScrolling()
     TextBox.Active = true
     TextBox.TextEditable = false
@@ -304,8 +263,6 @@ local function fixScrolling()
     
     TextBox:GetPropertyChangedSignal("Text"):Connect(updateCanvasSize)
 end
-
--- // ЭФФЕКТЫ ДЛЯ КНОПОК
 local function addButtonEffects(button, isBeta)
     local originalColor = button.BackgroundColor3
     local originalSize = button.Size
@@ -478,3 +435,4 @@ BetaBtn.MouseButton1Click:Connect(function()
     Loader.Visible = false
     LoadExternalUI(UI_URL_BETA, true)
 end)
+
