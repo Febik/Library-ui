@@ -80,7 +80,7 @@ TextBox.ClearTextOnFocus = false
 TextBox.TextEditable = false
 TextBox.Font = Enum.Font.SourceSans
 TextBox.PlaceholderColor3 = Color3.fromRGB(194, 194, 194)
-TextBox.Text = "version 1.3.6\n[ + ] improved Killaura\n[ ! ] cooldown 0.1 its RapidHit [Rage]\n[ ! ] cooldown 1 its legithit [Legit]\n[ ! ] Team select in killaura not working\nversion 1.3.5\n[ + ] Helper\n[ + ] AutoArrest (Helper)\n[ + ] AutoTaser (Helper)\n[ + ] Heal System\n[ + ] Support Heal tools: Medical Kit, Large Medical Kit, Quik-Fix, Medigun (Heal System)\n[ + ] Select Heal Team (Heal System)\n[ + ] Select Range Heal (Heal System)\n[ + ] Custom Title [Client-Side]\nversion 1.2.6\n[ + ] Killaura Module\n[ + ] Killaura Range (Killaura Module)\n[ + ] Killaura white list (Killaura Module)\n[ + ] Show Target (Killaura Module)\n[ + ] ESP Module\n[ + ] Type Esp: Gradient,Rainbow,Custom (ESP Module)\n[ + ] ShopTab [beta]\n[ + ] Patient Shop Module\n[ + ] Patient Weapons [Pt Shop]\n[ + ] Invisible [Malicious]\n[ + ] Malicious Module\n[ + ] TP-Hands Module\n[ + ] TP-hands Range (TP-Hands Module)\n[ + ] WalkSpeed Module\n[ + ] WalkSpeed change [WalkSpeed Module]\n[ + ] HipHeight change [WalkSpeed Module]\n[ + ] GodMode [Troll Button] [Malicious]\n[ + ] Ban Alt Bypass [Only Rejoin] [Malicious]\n[ + ] Pick Up Staff/Elevator Card [Malicious]\n[ + ] AntiRagdoll Standart [Malicious]\n[ + ] AntiRagdoll [beta] [Malicious]\n[ + ] AntiAfk [Malicious]\n[ + ] EmoteTab\n[ + ] AutoFarm Module\n[ + ] SkipTutorial [AutoFarm]\n[ + ] AutoEscape [AutoFarm]\n[ + ] AutoClearSpills [AutoFarm]\n[ - ] Visuals Module\nversion 1.1.3\n[ + ] Visuals Module\n[ + ] Аssistant\n[ + ] Assistant Models\n[ + ] Assistant Range\n[ + ] Assistant Music\n[ + ] Assistant Follow player Type: Orbit,Spiral,Smooth Follow\n[ + ] Assistant Lighting\nversion 1.0.5\n[ / ] New Menu"
+TextBox.Text = "Загрузка логов обновлений..."
 TextBox.TextColor3 = Color3.fromRGB(194, 194, 194)
 TextBox.TextSize = 14.000
 TextBox.TextWrapped = true
@@ -145,6 +145,8 @@ local BetaButtonCorner = Instance.new("UICorner")
 BetaButtonCorner.Parent = BetaButton
 local UI_URL_STABLE = "https://raw.githubusercontent.com/Febik/Library-ui/refs/heads/main/aswe"
 local UI_URL_BETA = "https://raw.githubusercontent.com/Febik/Library-ui/refs/heads/main/beta"
+-- Добавляем URL для логов обновлений
+local LOGS_URL = "https://raw.githubusercontent.com/Febik/Library-ui/refs/heads/main/logs"
 local LOADED_TAG = "SkipLoadingFileAllLoaded_1q234567890"
 local FOLDER_NAME = "Lolsense"
 local FILE_NAME = "Loaded.txt"
@@ -155,6 +157,21 @@ local prog = Loading:WaitForChild("ProgressBar")
 local Loader = GUI:WaitForChild("BackGroundLoader")
 local Button = Loader:WaitForChild("TextButton")
 local BetaBtn = Loader:WaitForChild("BetaButton")
+local LogsTextBox = Loader:WaitForChild("ScrollingFrame"):WaitForChild("TextBox")
+
+-- Функция для загрузки логов с GitHub
+local function loadLogsFromGitHub()
+    local success, result = pcall(function()
+        return game:HttpGet(LOGS_URL)
+    end)
+    
+    if success then
+        return result
+    else
+        return "Ошибка загрузки логов с GitHub\n\n" .. "version 1.3.6\n[ + ] improved Killaura\n[ ! ] cooldown 0.1 its RapidHit [Rage]\n[ ! ] cooldown 1 its legithit [Legit]\n[ ! ] Team select in killaura not working\nversion 1.3.5\n[ + ] Helper\n[ + ] AutoArrest (Helper)\n[ + ] AutoTaser (Helper)\n[ + ] Heal System\n[ + ] Support Heal tools: Medical Kit, Large Medical Kit, Quik-Fix, Medigun (Heal System)\n[ + ] Select Heal Team (Heal System)\n[ + ] Select Range Heal (Heal System)\n[ + ] Custom Title [Client-Side]\nversion 1.2.6\n[ + ] Killaura Module\n[ + ] Killaura Range (Killaura Module)\n[ + ] Killaura white list (Killaura Module)\n[ + ] Show Target (Killaura Module)\n[ + ] ESP Module\n[ + ] Type Esp: Gradient,Rainbow,Custom (ESP Module)\n[ + ] ShopTab [beta]\n[ + ] Patient Shop Module\n[ + ] Patient Weapons [Pt Shop]\n[ + ] Invisible [Malicious]\n[ + ] Malicious Module\n[ + ] TP-Hands Module\n[ + ] TP-hands Range (TP-Hands Module)\n[ + ] WalkSpeed Module\n[ + ] WalkSpeed change [WalkSpeed Module]\n[ + ] HipHeight change [WalkSpeed Module]\n[ + ] GodMode [Troll Button] [Malicious]\n[ + ] Ban Alt Bypass [Only Rejoin] [Malicious]\n[ + ] Pick Up Staff/Elevator Card [Malicious]\n[ + ] AntiRagdoll Standart [Malicious]\n[ + ] AntiRagdoll [beta] [Malicious]\n[ + ] AntiAfk [Malicious]\n[ + ] EmoteTab\n[ + ] AutoFarm Module\n[ + ] SkipTutorial [AutoFarm]\n[ + ] AutoEscape [AutoFarm]\n[ + ] AutoClearSpills [AutoFarm]\n[ - ] Visuals Module\nversion 1.1.3\n[ + ] Visuals Module\n[ + ] Аssistant\n[ + ] Assistant Models\n[ + ] Assistant Range\n[ + ] Assistant Music\n[ + ] Assistant Follow player Type: Orbit,Spiral,Smooth Follow\n[ + ] Assistant Lighting\nversion 1.0.5\n[ / ] New Menu"
+    end
+end
+
 local function makeDraggable(frame)
     local dragging = false
     local dragInput, mousePos, framePos
@@ -258,8 +275,13 @@ local function fixScrolling()
         ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, textHeight + 50)
     end
     
-    wait(0.1)
-    updateCanvasSize()
+    -- Загружаем логи с GitHub при инициализации
+    spawn(function()
+        local logsText = loadLogsFromGitHub()
+        TextBox.Text = logsText
+        wait(0.1)
+        updateCanvasSize()
+    end)
     
     TextBox:GetPropertyChangedSignal("Text"):Connect(updateCanvasSize)
 end
@@ -435,4 +457,3 @@ BetaBtn.MouseButton1Click:Connect(function()
     Loader.Visible = false
     LoadExternalUI(UI_URL_BETA, true)
 end)
-
