@@ -1,1 +1,57 @@
-
+version 1.3.7
+[ + ] Inf Stamina
+version 1.3.6 
+[ + ] improved Killaura 
+[ ! ] cooldown 0.1 its RapidHit 
+[Rage]
+[ ! ] cooldown 1 its legithit 
+[Legit] 
+[ ! ] Team select in killaura not working
+version 1.3.5 
+[ + ] Helper 
+[ + ] AutoArrest (Helper)
+[ + ] AutoTaser (Helper)
+[ + ] Heal System 
+[ + ] Support Heal tools: Medical Kit, Large Medical Kit, Quik-Fix, Medigun (Heal System)
+[ + ] Select Heal Team (Heal System)
+[ + ] Select Range Heal (Heal System)
+[ + ] Custom Title [Client-Side]
+version 1.2.6 
+[ + ] Killaura Module 
+[ + ] Killaura Range (Killaura Module)
+[ + ] Killaura white list (Killaura Module)
+[ + ] Show Target (Killaura Module)
+[ + ] ESP Module 
+[ + ] Type Esp: Gradient,Rainbow,Custom (ESP Module)
+[ + ] ShopTab [beta]
+[ + ] Patient Shop Module 
+[ + ] Patient Weapons [Pt Shop]
+[ + ] Invisible [Malicious]
+[ + ] Malicious Module 
+[ + ] TP-Hands Module 
+[ + ] TP-hands Range (TP-Hands Module)
+[ + ] WalkSpeed Module 
+[ + ] WalkSpeed change [WalkSpeed Module]
+[ + ] HipHeight change [WalkSpeed Module]
+[ + ] GodMode [Troll Button] [Malicious]
+[ + ] Ban Alt Bypass [Only Rejoin] [Malicious]
+[ + ] Pick Up Staff/Elevator Card [Malicious]
+[ + ] AntiRagdoll Standart [Malicious]
+[ + ] AntiRagdoll [beta] [Malicious]
+[ + ] AntiAfk [Malicious]
+[ + ] EmoteTab 
+[ + ] AutoFarm Module 
+[ + ] SkipTutorial [AutoFarm]
+[ + ] AutoEscape [AutoFarm]
+[ + ] AutoClearSpills [AutoFarm]
+[ - ] Visuals Module
+version 1.1.3 
+[ + ] Visuals Module 
+[ + ] Аssistant 
+[ + ] Assistant Models 
+[ + ] Assistant Range 
+[ + ] Assistant Music 
+[ + ] Assistant Follow player Type: Orbit,Spiral,Smooth Follow 
+[ + ] Assistant Light
+version 1.0.5
+[ / ] New Menu
