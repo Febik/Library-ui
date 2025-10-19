@@ -302,6 +302,56 @@ MaliciousModule:create_checkbox({
     end
 })
 
+local nocooldown = false
+local originalHoldDurations = {}
+local proximityPromptConnection = nil
+
+MaliciousModule:create_checkbox({
+    title = "Nocooldown ProximityPrompt",
+    flag = "nocooldown_enabled",
+    callback = function(Value)
+        nocooldown = Value
+        
+        if nocooldown then
+            -- Включение моментального использования
+            proximityPromptConnection = game:GetService("Workspace").DescendantAdded:Connect(function(descendant)
+                if descendant:IsA("ProximityPrompt") then
+                    -- Сохраняем оригинальное значение
+                    if not originalHoldDurations[descendant] then
+                        originalHoldDurations[descendant] = descendant.HoldDuration
+                    end
+                    -- Устанавливаем мгновенное использование
+                    descendant.HoldDuration = 0
+                end
+            end)
+            
+            -- Применяем ко всем существующим ProximityPrompt
+            for _, obj in ipairs(game:GetService("Workspace"):GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    if not originalHoldDurations[obj] then
+                        originalHoldDurations[obj] = obj.HoldDuration
+                    end
+                    obj.HoldDuration = 0
+                end
+            end
+            
+        else
+            -- Выключение - возвращаем оригинальные значения
+            if proximityPromptConnection then
+                proximityPromptConnection:Disconnect()
+                proximityPromptConnection = nil
+            end
+            
+            for prompt, originalDuration in pairs(originalHoldDurations) do
+                if prompt and prompt.Parent then
+                    prompt.HoldDuration = originalDuration
+                end
+            end
+            originalHoldDurations = {}
+        end
+    end
+})
+
 MaliciousModule:create_button({
     title = "Bypass Alt Ban [Only Rejoin]",
     callback = function()
