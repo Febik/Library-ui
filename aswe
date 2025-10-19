@@ -40,6 +40,41 @@ WalkSpeedModule:create_checkbox({
     end
 })
 
+local Player = game:GetService("Players").LocalPlayer
+local aux = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Upbolt/Hydroxide/revision/ohaux.lua"))()
+
+-- Путь до нужного скрипта
+local scriptPath = Player.PlayerScripts.RunPlayerScripts.Movement
+local closureName = "onStepped"
+local closureConstants = {
+	[1] = 0,
+	[2] = "EXTRASPEED",
+	[3] = "GetAttribute",
+	[4] = 4,
+	[5] = "MoveDirection",
+	[6] = "Magnitude"
+}
+
+-- Находим upvalues
+local closure1 = aux.searchClosure(scriptPath, closureName, 3, closureConstants)
+local closure2 = aux.searchClosure(scriptPath, closureName, 4, closureConstants)
+
+
+WalkSpeedModule:create_checkbox({
+	title = "inf stamina",
+	flag = "ExtraSpeed",
+	callback = function(state)
+		if state then
+			-- Включено: ставим 999+
+			debug.setupvalue(closure1, 3, math.huge)
+			debug.setupvalue(closure2, 4, math.huge)
+		else
+			-- Выключено: возвращаем обычное значение
+			debug.setupvalue(closure1, 3, 100)
+			debug.setupvalue(closure2, 4, 100)
+		end
+	end
+})
 
 
 local speedValue = 16
@@ -326,7 +361,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 local AntiRagdollEnabled = false
-local speed = 3
+local speed = 10
 local keys = {W=false,A=false,S=false,D=false,Space=false,Shift=false}
 
 local hrp, humanoid
@@ -676,6 +711,27 @@ local function fireHit(targetPlayer)
 	end
 end
 
+local ignoreTeamsForOrderly = {
+    AFFILIATE = true,
+    BOXED = true,
+    CHOOSING = true,
+    COMMUNITY = true,
+    DEVELOPER = true,
+    ETHICS = true,
+    HEADMANAGEMENT = true,
+    IGNOTUS = true,
+    JANITOR = true,
+    MAINTENANCE = true,
+    MANAGEMENT = true,
+    MEDICAL = true,
+    MPT = true,
+    ORDERLY = true,
+    OWNERSHIP = true,
+    PSYHIATRY = true,
+    RELATIONS = true,
+    SUPERVISION = true
+}
+
 -- Killaura логика
 RunService.Heartbeat:Connect(function(dt)
 	if not Killaura_Module or not killauraEnabled then
@@ -698,6 +754,15 @@ RunService.Heartbeat:Connect(function(dt)
 			and player.Character.Humanoid.Health > 0 
 			and not isFriend(player)
 			and not hasIgnoreUniform(player) then
+
+            local targetTeam = player:GetAttribute("CurrentTeamIndex")
+            local myTeam = localPlayer:GetAttribute("CurrentTeamIndex")
+
+            -- Если мы ORDERLY, игнорируем перечисленные команды
+            if myTeam == "ORDERLY" and ignoreTeamsForOrderly[targetTeam] then
+                continue
+            end
+
 			local dist = (hrp.Position - player.Character.HumanoidRootPart.Position).Magnitude
 			if dist <= killauraRadius and dist < closestDistance then
 				closestDistance = dist
@@ -718,6 +783,7 @@ RunService.Heartbeat:Connect(function(dt)
 		targetHighlight.Adornee = nil
 	end
 end)
+
 
 -- ⚙️ Элементы GUI
 KillauraModule:create_checkbox({
@@ -865,7 +931,7 @@ task.spawn(function()
 			if plr == LocalPlayer then continue end
 			if not plr.Team or plr.Team.Name ~= "PATIENT" then continue end
 			if not plr:GetAttribute("IsTagged") then continue end
-            if hasIgnoreUniform(plr) then continue end -- 🚫 не арестовывать форму
+           -- if hasIgnoreUniform(plr) then continue end -- 🚫 не арестовывать форму
 
 			local targetRoot = GetRoot(plr)
 			if not targetRoot then continue end
@@ -873,7 +939,7 @@ task.spawn(function()
 			local distance = GetDistance(myRoot, targetRoot)
 			if distance <= ARREST_RADIUS then
 				local targetHumanoid = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
-				if targetHumanoid and targetHumanoid.Health > 0 and not targetHumanoid.PlatformStand then
+				if targetHumanoid and targetHumanoid.Health > 0 then
 					DetainmentEvent:FireServer(plr)
 					print("🔒 Arrested:", plr.Name)
 					task.wait(0.3)
@@ -999,6 +1065,12 @@ task.spawn(function()
 		local target = FindTaserTarget()
 		if not target then RemoveBeam() continue end
 
+		-- ⚠ Проверка атрибута CurrentTeamIndex
+		if target:GetAttribute("CurrentTeamIndex") == 5 then
+			RemoveBeam()
+			continue
+		end
+
 		local targetRoot = GetRoot(target)
 		local startPos = GetShootPos()
 		if not targetRoot or not startPos then continue end
@@ -1007,6 +1079,7 @@ task.spawn(function()
 
 		local event = tool:FindFirstChild("TaserEvent")
 		if event then
+			-- ⚡ Активируем саму стрельбу тазером
 			event:InvokeServer("Tase", targetRoot)
 			print("⚡ Tased:", target.Name)
 		end
@@ -1905,7 +1978,6 @@ task.spawn(function()
 				medigunEvent:FireServer(nearest)
 			end
 		else
-            warn("HVH BIBIZAKA")
 		end
 	end
 end)
