@@ -1978,6 +1978,7 @@ task.spawn(function()
 				medigunEvent:FireServer(nearest)
 			end
 		else
+            warn("HVH BIBIZAKA")
 		end
 	end
 end)
