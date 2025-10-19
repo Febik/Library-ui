@@ -285,6 +285,28 @@ local function fixScrolling()
     
     TextBox:GetPropertyChangedSignal("Text"):Connect(updateCanvasSize)
 end
+
+-- Автоматическое обновление логов (async)
+task.spawn(function()
+    local lastLogs = ""
+    while true do
+        task.wait(3) -- интервал обновления, можно поставить 30 или 120
+        local newLogs = loadLogsFromGitHub()
+
+        if newLogs and newLogs ~= lastLogs then
+            lastLogs = newLogs
+            TextBox.Text = newLogs
+
+            -- плавный скролл в конец
+            game:GetService("TweenService"):Create(
+                ScrollingFrame,
+                TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {CanvasPosition = Vector2.new(0, ScrollingFrame.AbsoluteCanvasSize.Y)}
+            ):Play()
+        end
+    end
+end)
+
 local function addButtonEffects(button, isBeta)
     local originalColor = button.BackgroundColor3
     local originalSize = button.Size
@@ -383,17 +405,7 @@ local function LoadExternalUI(url, isBeta)
 	local ok2, err2 = pcall(func)
 	if not ok2 then
 		warn("[Lolsense] Ошибка при запуске UI (" .. versionName .. "): " .. tostring(err2))
-        Library.SendNotification({
-            title = "Lolsense " .. versionName,
-            text = "Ошибка выполнения скрипта",
-            duration = 5
-        })
 	else
-		Library.SendNotification({
-            title = "Lolsense " .. versionName,
-            text = versionName .. " версия успешно загружена!",
-            duration = 5
-        })
 	end
 end
 
