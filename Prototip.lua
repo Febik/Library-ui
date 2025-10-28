@@ -628,6 +628,100 @@ keybindLayout = Instance.new("UIListLayout", keybindScroll)
 keybindLayout.Padding = UDim.new(0, 5)
 keybindLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- ====== CONFIRMATION DIALOG ======
+local function showConfirmation(title, message, confirmCallback, cancelCallback)
+    local backgroundOverlay = Instance.new("TextButton", Gui)
+    backgroundOverlay.Size = UDim2.new(1, 0, 1, 0)
+    backgroundOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
+    backgroundOverlay.BackgroundTransparency = 0.5
+    backgroundOverlay.Text = ""
+    backgroundOverlay.BorderSizePixel = 0
+    backgroundOverlay.ZIndex = 99
+
+    local dialog = Instance.new("Frame", Gui)
+    dialog.Size = UDim2.new(0, 300, 0, 150)
+    dialog.Position = UDim2.new(0.5, -150, 0.5, -75)
+    dialog.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    dialog.BorderSizePixel = 0
+    dialog.ZIndex = 100
+    makeUICorner(dialog, 8)
+    makeUIStroke(dialog, Color3.fromRGB(80, 80, 100), 2)
+
+    local titleLabel = Instance.new("TextLabel", dialog)
+    titleLabel.Size = UDim2.new(1, -20, 0, 30)
+    titleLabel.Position = UDim2.new(0, 10, 0, 10)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 16
+    titleLabel.TextColor3 = Color3.fromRGB(220, 50, 50)
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 101
+
+    local messageLabel = Instance.new("TextLabel", dialog)
+    messageLabel.Size = UDim2.new(1, -20, 0, 50)
+    messageLabel.Position = UDim2.new(0, 10, 0, 45)
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Text = message
+    messageLabel.Font = Enum.Font.Gotham
+    messageLabel.TextSize = 13
+    messageLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    messageLabel.TextWrapped = true
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.ZIndex = 101
+
+    local buttonContainer = Instance.new("Frame", dialog)
+    buttonContainer.Size = UDim2.new(1, -20, 0, 35)
+    buttonContainer.Position = UDim2.new(0, 10, 1, -50)
+    buttonContainer.BackgroundTransparency = 1
+    buttonContainer.ZIndex = 101
+
+    local buttonLayout = Instance.new("UIGridLayout", buttonContainer)
+    buttonLayout.CellSize = UDim2.new(0.45, 0, 1, 0)
+    buttonLayout.CellPadding = UDim2.new(0.1, 0, 0, 0)
+    buttonLayout.FillDirection = Enum.FillDirection.Horizontal
+    buttonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    local function closeDialog()
+        safeDestroy(dialog)
+        safeDestroy(backgroundOverlay)
+    end
+
+    local confirmBtn = Instance.new("TextButton", buttonContainer)
+    confirmBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+    confirmBtn.Text = "Yes"
+    confirmBtn.Font = Enum.Font.Gotham
+    confirmBtn.TextSize = 14
+    confirmBtn.TextColor3 = Color3.new(1, 1, 1)
+    confirmBtn.AutoButtonColor = false
+    confirmBtn.BorderSizePixel = 0
+    confirmBtn.ZIndex = 102
+    makeUICorner(confirmBtn, 6)
+
+    local cancelBtn = Instance.new("TextButton", buttonContainer)
+    cancelBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    cancelBtn.Text = "No"
+    cancelBtn.Font = Enum.Font.Gotham
+    cancelBtn.TextSize = 14
+    cancelBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    cancelBtn.AutoButtonColor = false
+    cancelBtn.BorderSizePixel = 0
+    cancelBtn.ZIndex = 102
+    makeUICorner(cancelBtn, 6)
+
+    confirmBtn.MouseButton1Click:Connect(function()
+        if confirmCallback then confirmCallback() end
+        closeDialog()
+    end)
+    
+    cancelBtn.MouseButton1Click:Connect(function()
+        if cancelCallback then cancelCallback() end
+        closeDialog()
+    end)
+    
+    backgroundOverlay.MouseButton1Click:Connect(closeDialog)
+end
+
 -- Toggle function (keeps frame visible, just collapses/expands)
 local function toggleKeybindList(state)
 	if state ~= nil then keybindListVisible = state else keybindListVisible = not keybindListVisible end
@@ -967,4 +1061,5 @@ UIS.InputBegan:Connect(function(input, gp)
 		MainFrame.Visible = not MainFrame.Visible
 	end
 end)
+
 
