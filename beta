@@ -1,1 +1,44 @@
-k5n21kjn5k12b523b5nmb12m4b12b5l1b25h12k5hb12
+-- Пример использования
+local LOLSENSE = require(script.Parent.LOLSENSE_Library) -- путь к вашему скрипту
+
+-- Инициализация
+LOLSENSE:Init({
+    title = "My Awesome UI"
+})
+
+-- Создание вкладки
+local CombatTab = LOLSENSE:CreateTab("Combat")
+
+-- Создание секции
+local aimbotSection = LOLSENSE:CreateSection(CombatTab, "Aimbot Features")
+
+-- Добавление чекбокса
+local aimbotToggle, setAimbot = LOLSENSE:CreateCheckbox(aimbotSection, "Enable Aimbot", function(state)
+    print("Aimbot:", state and "ON" or "OFF")
+    -- Ваш код здесь
+end)
+
+-- Добавление кнопки
+LOLSENSE:CreateButton(aimbotSection, "Teleport to Target", function()
+    print("Teleporting...")
+    -- Ваш код здесь
+end)
+
+-- Добавление биндов
+local getAimbotState = LOLSENSE:AddBind("Aimbot", "K", "Toggle")
+local getESPState = LOLSENSE:AddBind("ESP", "L", "Hold")
+
+-- Использование биндов в игровой логике
+game:GetService("RunService").RenderStepped:Connect(function()
+    if LOLSENSE:GetBindState("Aimbot") then
+        -- Код aimbot
+    end
+    
+    if LOLSENSE:GetBindState("ESP") then
+        -- Код ESP
+    end
+end)
+
+-- Управление видимостью UI
+LOLSENSE:SetVisible(true) -- Показать
+LOLSENSE:ToggleVisible()  -- Переключить видимость
