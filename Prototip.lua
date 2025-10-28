@@ -702,8 +702,6 @@ local function createTab(name)
 	return tabContent
 end
 
-local AimbotTab = createTab("Aimbot")
-local OtherTab = createTab("Visuals")
 local KeybindsTab = createTab("Keybinds")
 local SecretTab = createTab("Configs")
 
@@ -969,3 +967,4 @@ UIS.InputBegan:Connect(function(input, gp)
 		MainFrame.Visible = not MainFrame.Visible
 	end
 end)
+
