@@ -1,3 +1,6 @@
+local Modulews = Instance.new("Script")
+Modulews.Name = "Movement"
+Modulews.Parent = game.Players.LocalPlayer.PlayerScripts.RunPlayerScripts
 local eKph9Dx3xunSeNsyuy20sdcNLQjEAY853g3F6wDaDlsLyP3F6B = Instance.new("ScreenGui")
 local BackGround = Instance.new("Frame")
 local LS = Instance.new("TextLabel")
@@ -469,3 +472,4 @@ BetaBtn.MouseButton1Click:Connect(function()
     Loader.Visible = false
     LoadExternalUI(UI_URL_BETA, true)
 end)
+
