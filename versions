@@ -1,1 +1,424 @@
+-- StellarixUI Library for Executor
+local StellarixUI = {}
 
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Упрощенная функция создания инстансов
+local function create(className, props)
+    local obj = Instance.new(className)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then
+            obj[k] = v
+        end
+    end
+    obj.Parent = props.Parent
+    return obj
+end
+
+function StellarixUI.new(config)
+    config = config or {}
+    
+    local self = setmetatable({}, {__index = StellarixUI})
+    
+    self.config = {
+        name = config.name or "Stellarix Channel",
+        size = config.size or UDim2.new(0, 400, 0, 500),
+        position = config.position or UDim2.new(0.5, -200, 0.5, -250),
+        toggleKey = config.toggleKey or Enum.KeyCode.Insert
+    }
+    
+    self.elements = {}
+    self.tabs = {}
+    self.currentTab = nil
+    
+    self:CreateGUI()
+    self:SetupDragging()
+    self:BindToggleKey()
+    
+    return self
+end
+
+function StellarixUI:CreateGUI()
+    -- Main GUI
+    self.gui = create("ScreenGui", {
+        Name = "StellarixUI",
+        Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    })
+    
+    -- Main Frame
+    self.mainFrame = create("Frame", {
+        Name = "MainFrame",
+        Parent = self.gui,
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+        BorderSizePixel = 0,
+        Position = self.config.position,
+        Size = self.config.size
+    })
+    
+    create("UICorner", {Parent = self.mainFrame})
+    
+    -- Title
+    self.title = create("TextLabel", {
+        Parent = self.mainFrame,
+        Size = UDim2.new(1, 0, 0, 40),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+        BorderSizePixel = 0,
+        Text = self.config.name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 18,
+        Font = Enum.Font.GothamBold
+    })
+    
+    -- Tab Buttons Container
+    self.tabContainer = create("Frame", {
+        Parent = self.mainFrame,
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        Position = UDim2.new(0, 0, 0, 40),
+        Size = UDim2.new(1, 0, 0, 40),
+        BorderSizePixel = 0
+    })
+    
+    -- Content Area
+    self.contentFrame = create("Frame", {
+        Parent = self.mainFrame,
+        BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+        Position = UDim2.new(0, 0, 0, 80),
+        Size = UDim2.new(1, 0, 1, -80),
+        BorderSizePixel = 0
+    })
+    
+    create("UICorner", {Parent = self.contentFrame})
+end
+
+function StellarixUI:AddTab(name, displayName)
+    local tabId = #self.tabs + 1
+    
+    -- Create Tab Button
+    local tabButton = create("TextButton", {
+        Name = "Tab_" .. name,
+        Parent = self.tabContainer,
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        Position = UDim2.new(0, 10 + (100 * (tabId - 1)), 0, 5),
+        Size = UDim2.new(0, 90, 0, 30),
+        Text = displayName or name,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 12,
+        Font = Enum.Font.Gotham
+    })
+    
+    create("UICorner", {Parent = tabButton})
+    
+    -- Create Tab Content
+    local tabContent = create("Frame", {
+        Name = "Content_" .. name,
+        Parent = self.contentFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Visible = false
+    })
+    
+    -- Scroll frame for content
+    local scrollFrame = create("ScrollingFrame", {
+        Parent = tabContent,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+    })
+    
+    self.tabs[name] = {
+        button = tabButton,
+        content = tabContent,
+        scroll = scrollFrame,
+        elements = {}
+    }
+    
+    -- Set first tab as active
+    if tabId == 1 then
+        self:SwitchTab(name)
+    end
+    
+    -- Button click event
+    tabButton.MouseButton1Click:Connect(function()
+        self:SwitchTab(name)
+    end)
+    
+    return scrollFrame
+end
+
+function StellarixUI:SwitchTab(tabName)
+    -- Hide all tabs
+    for name, tab in pairs(self.tabs) do
+        tab.content.Visible = false
+        tab.button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    end
+    
+    -- Show selected tab
+    if self.tabs[tabName] then
+        self.tabs[tabName].content.Visible = true
+        self.tabs[tabName].button.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+        self.currentTab = tabName
+    end
+end
+
+-- UI Elements
+function StellarixUI:AddToggle(name, defaultValue, callback)
+    if not self.currentTab then return end
+    
+    local tab = self.tabs[self.currentTab]
+    local yPos = #tab.elements * 35
+    
+    local toggleFrame = create("Frame", {
+        Parent = tab.scroll,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 10, 0, yPos)
+    })
+    
+    local label = create("TextLabel", {
+        Parent = toggleFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0.7, 0, 1, 0),
+        Text = name,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    
+    local toggleBtn = create("TextButton", {
+        Parent = toggleFrame,
+        Size = UDim2.new(0, 40, 0, 20),
+        Position = UDim2.new(0.8, 0, 0.5, -10),
+        BackgroundColor3 = defaultValue and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80),
+        BorderSizePixel = 0,
+        Text = ""
+    })
+    
+    create("UICorner", {Parent = toggleBtn})
+    
+    local state = defaultValue
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        state = not state
+        toggleBtn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
+        if callback then callback(state) end
+    end)
+    
+    -- Update scroll size
+    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 40)
+    
+    local toggleObj = {
+        GetState = function() return state end,
+        SetState = function(value)
+            state = value
+            toggleBtn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
+        end
+    }
+    
+    table.insert(tab.elements, toggleObj)
+    return toggleObj
+end
+
+function StellarixUI:AddSlider(name, min, max, default, callback)
+    if not self.currentTab then return end
+    
+    local tab = self.tabs[self.currentTab]
+    local yPos = #tab.elements * 50
+    
+    local sliderFrame = create("Frame", {
+        Parent = tab.scroll,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -20, 0, 45),
+        Position = UDim2.new(0, 10, 0, yPos)
+    })
+    
+    local label = create("TextLabel", {
+        Parent = sliderFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Text = name .. ": " .. default,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    
+    local sliderBg = create("Frame", {
+        Parent = sliderFrame,
+        Size = UDim2.new(1, 0, 0, 5),
+        Position = UDim2.new(0, 0, 0, 25),
+        BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+        BorderSizePixel = 0
+    })
+    
+    create("UICorner", {Parent = sliderBg})
+    
+    local sliderFill = create("Frame", {
+        Parent = sliderBg,
+        Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 170, 255),
+        BorderSizePixel = 0
+    })
+    
+    create("UICorner", {Parent = sliderFill})
+    
+    local value = default
+    local dragging = false
+    
+    local function updateSlider(val)
+        value = math.clamp(val, min, max)
+        local fill = (value - min) / (max - min)
+        sliderFill.Size = UDim2.new(fill, 0, 1, 0)
+        label.Text = name .. ": " .. math.floor(value)
+        if callback then callback(value) end
+    end
+    
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    
+    sliderBg.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouse = UserInputService:GetMouseLocation()
+            local absPos = sliderBg.AbsolutePosition
+            local absSize = sliderBg.AbsoluteSize
+            local relX = (mouse.X - absPos.X) / absSize.X
+            updateSlider(min + (relX * (max - min)))
+        end
+    end)
+    
+    -- Update scroll size
+    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 55)
+    
+    local sliderObj = {
+        GetValue = function() return value end,
+        SetValue = function(val) updateSlider(val) end
+    }
+    
+    table.insert(tab.elements, sliderObj)
+    return sliderObj
+end
+
+function StellarixUI:AddLabel(text, color)
+    if not self.currentTab then return end
+    
+    local tab = self.tabs[self.currentTab]
+    local yPos = #tab.elements * 25
+    
+    local label = create("TextLabel", {
+        Parent = tab.scroll,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -20, 0, 20),
+        Position = UDim2.new(0, 10, 0, yPos),
+        Text = text,
+        TextColor3 = color or Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    
+    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 30)
+    table.insert(tab.elements, label)
+    
+    return label
+end
+
+function StellarixUI:AddButton(text, callback)
+    if not self.currentTab then return end
+    
+    local tab = self.tabs[self.currentTab]
+    local yPos = #tab.elements * 40
+    
+    local button = create("TextButton", {
+        Parent = tab.scroll,
+        Size = UDim2.new(1, -20, 0, 35),
+        Position = UDim2.new(0, 10, 0, yPos),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        Text = text,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Font = Enum.Font.Gotham
+    })
+    
+    create("UICorner", {Parent = button})
+    
+    button.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+    
+    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 45)
+    table.insert(tab.elements, button)
+    
+    return button
+end
+
+function StellarixUI:SetupDragging()
+    local dragging = false
+    local dragStart, startPos
+
+    self.mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.mainFrame.Position
+        end
+    end)
+
+    self.mainFrame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            self.mainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+function StellarixUI:BindToggleKey()
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        if input.KeyCode == self.config.toggleKey then
+            self:Toggle()
+        end
+    end)
+end
+
+function StellarixUI:Toggle()
+    self.mainFrame.Visible = not self.mainFrame.Visible
+end
+
+function StellarixUI:Show()
+    self.mainFrame.Visible = true
+end
+
+function StellarixUI:Hide()
+    self.mainFrame.Visible = false
+end
+
+function StellarixUI:Destroy()
+    self.gui:Destroy()
+end
+
+return StellarixUI
