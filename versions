@@ -626,50 +626,174 @@ function StellarixUI:AddButton(name, callback)
     return button
 end
 
+-- ИСПРАВЛЕННАЯ СИСТЕМА КОНФИГОВ
 function StellarixUI:AddConfigSystem()
     local configTab = self:AddTab("Config", "Config")
+    
+    -- Config controls
+    local controlsFrame = create("Frame", {
+        Parent = configTab,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 40),
+        Size = UDim2.new(0.3, -20, 0, 200)
+    })
+    
+    -- TextBox для имени конфига
+    local textFrame = create("Frame", {
+        Parent = controlsFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 40),
+        Position = UDim2.new(0, 0, 0, 0)
+    })
+    
+    local label = create("TextLabel", {
+        Parent = textFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Text = "Config Name",
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    
+    local configTextBox = create("TextBox", {
+        Parent = textFrame,
+        Size = UDim2.new(1, 0, 0, 25),
+        Position = UDim2.new(0, 0, 0, 20),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Text = "",
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    })
+    
+    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = configTextBox})
+    
+    -- Кнопки управления конфигами
+    local saveBtn = create("TextButton", {
+        Parent = controlsFrame,
+        Size = UDim2.new(1, 0, 0, 36),
+        Position = UDim2.new(0, 0, 0, 50),
+        BackgroundColor3 = Color3.fromRGB(18, 12, 20),
+        Text = "Save",
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 15,
+        Font = Enum.Font.Gotham
+    })
+    
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = saveBtn})
+    
+    local loadBtn = create("TextButton", {
+        Parent = controlsFrame,
+        Size = UDim2.new(1, 0, 0, 36),
+        Position = UDim2.new(0, 0, 0, 91),
+        BackgroundColor3 = Color3.fromRGB(18, 12, 20),
+        Text = "Load",
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 15,
+        Font = Enum.Font.Gotham
+    })
+    
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = loadBtn})
+    
+    local deleteBtn = create("TextButton", {
+        Parent = controlsFrame,
+        Size = UDim2.new(1, 0, 0, 36),
+        Position = UDim2.new(0, 0, 0, 132),
+        BackgroundColor3 = Color3.fromRGB(18, 12, 20),
+        Text = "Delete",
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 15,
+        Font = Enum.Font.Gotham
+    })
+    
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = deleteBtn})
     
     -- Config list
     local configList = create("ScrollingFrame", {
         Parent = configTab,
         BackgroundColor3 = Color3.fromRGB(8, 8, 8),
-        Position = UDim2.new(0.35, 0, 0, 0),
-        Size = UDim2.new(0.65, 0, 0.8, 0),
+        Position = UDim2.new(0.35, 0, 0, 40),
+        Size = UDim2.new(0.65, -20, 0, 200),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         ScrollBarThickness = 2
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = configList})
     
-    -- Config controls
-    local controlsFrame = create("Frame", {
-        Parent = configTab,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(0.3, 0, 0.8, 0)
-    })
-    
-    local configName = self:AddTextBox(controlsFrame, "Config Name", "", function(text)
-        self.currentConfigName = text
-    end)
-    
-    self:AddButton(controlsFrame, "Save", function()
-        if self.currentConfigName and self.currentConfigName ~= "" then
-            self:SaveConfig(self.currentConfigName)
+    -- Обработчики кнопок
+    saveBtn.MouseButton1Click:Connect(function()
+        local configName = configTextBox.Text
+        if configName and configName ~= "" then
+            self:SaveConfig(configName)
+            self:UpdateConfigList(configList)
         end
     end)
     
-    self:AddButton(controlsFrame, "Load", function()
-        if self.currentConfigName then
-            self:LoadConfig(self.currentConfigName)
+    loadBtn.MouseButton1Click:Connect(function()
+        local configName = configTextBox.Text
+        if configName and configName ~= "" then
+            self:LoadConfig(configName)
         end
     end)
     
-    self:AddButton(controlsFrame, "Delete", function()
-        if self.currentConfigName then
-            self:DeleteConfig(self.currentConfigName)
+    deleteBtn.MouseButton1Click:Connect(function()
+        local configName = configTextBox.Text
+        if configName and configName ~= "" then
+            self:DeleteConfig(configName)
+            self:UpdateConfigList(configList)
         end
     end)
+    
+    -- Заполняем список конфигов
+    self:UpdateConfigList(configList)
+end
+
+function StellarixUI:UpdateConfigList(configList)
+    -- Очищаем список
+    for _, child in ipairs(configList:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    local yOffset = 0
+    for configName, _ in pairs(self.configs) do
+        local configItem = create("Frame", {
+            Parent = configList,
+            BackgroundColor3 = Color3.fromRGB(12, 12, 12),
+            Size = UDim2.new(1, -10, 0, 30),
+            Position = UDim2.new(0, 5, 0, yOffset)
+        })
+        
+        create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = configItem})
+        
+        local nameLabel = create("TextLabel", {
+            Parent = configItem,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Position = UDim2.new(0, 10, 0, 0),
+            Text = configName,
+            TextColor3 = Color3.fromRGB(235, 235, 235),
+            TextSize = 14,
+            Font = Enum.Font.Gotham,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+        
+        configItem.MouseButton1Click:Connect(function()
+            -- Заполняем текстовое поле при клике на конфиг
+            local textBox = configList.Parent.Parent:FindFirstChild("Config Name", true)
+            if textBox and textBox:IsA("TextBox") then
+                textBox.Text = configName
+            end
+        end)
+        
+        yOffset = yOffset + 35
+    end
+    
+    configList.CanvasSize = UDim2.new(0, 0, 0, yOffset)
 end
 
 function StellarixUI:SaveConfig(name)
@@ -682,13 +806,15 @@ function StellarixUI:SaveConfig(name)
             elseif element.GetValue then
                 configData[tabName][i] = element.GetValue()
             elseif element.GetColor then
-                configData[tabName][i] = {element.GetColor().R, element.GetColor().G, element.GetColor().B}
+                local color = element.GetColor()
+                configData[tabName][i] = {color.R, color.G, color.B}
             elseif element.GetText then
                 configData[tabName][i] = element.GetText()
             end
         end
     end
     self.configs[name] = configData
+    print("Config saved:", name)
 end
 
 function StellarixUI:LoadConfig(name)
@@ -711,11 +837,15 @@ function StellarixUI:LoadConfig(name)
                 end
             end
         end
+        print("Config loaded:", name)
+    else
+        print("Config not found:", name)
     end
 end
 
 function StellarixUI:DeleteConfig(name)
     self.configs[name] = nil
+    print("Config deleted:", name)
 end
 
 function StellarixUI:SetupDragging()
