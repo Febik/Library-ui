@@ -220,7 +220,7 @@ function LolSenseUI:AddSection(parent, name)
         Parent = parent,
         BackgroundColor3 = Color3.fromRGB(12, 12, 12),
         Size = UDim2.new(1, -20, 0, 40),
-        Position = UDim2.new(0, 10, 0, #parent:GetChildren() * 45)
+        Position = UDim2.new(0, 10, 0, parent.CanvasSize.Y.Offset)
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = section})
@@ -784,7 +784,6 @@ function LolSenseUI:AddConfigSystem()
     if self.destroyed then return end
     
     local configTab = self:AddTab("Config", "Config")
-    self:SwitchTab("Config")
     
     -- Config controls (левая часть)
     local controlsFrame = create("Frame", {
@@ -918,6 +917,8 @@ function LolSenseUI:AddConfigSystem()
     
     -- Заполняем список конфигов
     self:UpdateConfigList(configList)
+    
+    return configTab
 end
 
 function LolSenseUI:UpdateConfigList(configList)
