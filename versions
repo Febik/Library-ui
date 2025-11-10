@@ -32,6 +32,7 @@ function StellarixUI.new(config)
     self.tabs = {}
     self.currentTab = nil
     self.configs = {}
+    self.destroyed = false
     
     self:CreateGUI()
     self:SetupDragging()
@@ -41,6 +42,8 @@ function StellarixUI.new(config)
 end
 
 function StellarixUI:CreateGUI()
+    if self.destroyed then return end
+    
     self.gui = create("ScreenGui", {
         Name = "ProtectedGUI",
         Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -60,7 +63,7 @@ function StellarixUI:CreateGUI()
     self.topBar = create("Frame", {
         Name = "TopBar",
         Parent = self.mainFrame,
-        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
         Size = UDim2.new(1, 0, 0, 56)
     })
     
@@ -69,7 +72,7 @@ function StellarixUI:CreateGUI()
         Parent = self.topBar,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(0.167, 0, 1.232, 0),
+        Size = UDim2.new(0.167, 0, 1, 0),
         Font = Enum.Font.GothamBold,
         Text = self.config.name,
         TextColor3 = Color3.fromRGB(235, 235, 235),
@@ -99,6 +102,8 @@ function StellarixUI:CreateGUI()
 end
 
 function StellarixUI:AddTab(name, displayName)
+    if self.destroyed then return end
+    
     local tabId = #self.tabs + 1
     
     local tabButton = create("TextButton", {
@@ -110,7 +115,8 @@ function StellarixUI:AddTab(name, displayName)
         Font = Enum.Font.Gotham,
         Text = displayName or name,
         TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 15
+        TextSize = 15,
+        AutoButtonColor = false
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = tabButton})
@@ -143,7 +149,8 @@ function StellarixUI:AddTab(name, displayName)
         Position = UDim2.new(0, 0, 0.06, 0),
         Size = UDim2.new(1, 0, 0.94, 0),
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 2
+        ScrollBarThickness = 2,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = scrollFrame})
@@ -161,6 +168,7 @@ function StellarixUI:AddTab(name, displayName)
     end
     
     tabButton.MouseButton1Click:Connect(function()
+        if self.destroyed then return end
         self:SwitchTab(name)
     end)
     
@@ -168,30 +176,40 @@ function StellarixUI:AddTab(name, displayName)
 end
 
 function StellarixUI:SwitchTab(tabName)
+    if self.destroyed then return end
+    
+    -- Сначала скрываем все вкладки
     for name, tab in pairs(self.tabs) do
-        if name == tabName then
-            tab.content.Visible = true
-            tab.button.BackgroundColor3 = Color3.fromRGB(25, 20, 30)
-            
-            -- Анимация появления
-            tab.content.Position = UDim2.new(1, 0, 0, 10)
-            TweenService:Create(tab.content, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0, 10, 0, 10)
-            }):Play()
-        else
+        if name ~= tabName then
             tab.content.Visible = false
             tab.button.BackgroundColor3 = Color3.fromRGB(18, 12, 20)
         end
     end
-    self.currentTab = tabName
+    
+    -- Показываем выбранную вкладку с анимацией
+    if self.tabs[tabName] then
+        local tab = self.tabs[tabName]
+        tab.content.Visible = true
+        tab.button.BackgroundColor3 = Color3.fromRGB(25, 20, 30)
+        
+        -- Анимация появления
+        tab.content.Position = UDim2.new(1, 0, 0, 10)
+        TweenService:Create(tab.content, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 10, 0, 10)
+        }):Play()
+        
+        self.currentTab = tabName
+    end
 end
 
 function StellarixUI:AddSection(parent, name)
+    if self.destroyed then return end
+    
     local section = create("Frame", {
         Parent = parent,
         BackgroundColor3 = Color3.fromRGB(12, 12, 12),
         Size = UDim2.new(1, -20, 0, 40),
-        Position = UDim2.new(0, 10, 0, parent.CanvasSize.Y.Offset)
+        Position = UDim2.new(0, 10, 0, #parent:GetChildren() * 45)
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = section})
@@ -208,13 +226,11 @@ function StellarixUI:AddSection(parent, name)
         TextXAlignment = Enum.TextXAlignment.Left
     })
     
-    parent.CanvasSize = UDim2.new(0, 0, 0, parent.CanvasSize.Y.Offset + 50)
-    
     return section
 end
 
 function StellarixUI:AddToggle(name, defaultValue, callback)
-    if not self.currentTab then return end
+    if self.destroyed or not self.currentTab then return end
     
     local tab = self.tabs[self.currentTab]
     local yPos = tab.yOffset
@@ -237,18 +253,20 @@ function StellarixUI:AddToggle(name, defaultValue, callback)
         TextXAlignment = Enum.TextXAlignment.Left
     })
     
-    local toggleOuter = create("Frame", {
+    local toggleButton = create("TextButton", {
         Parent = toggleFrame,
         Size = UDim2.new(0, 40, 0, 20),
         Position = UDim2.new(0.8, 0, 0.5, -10),
         BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-        BorderSizePixel = 0
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false
     })
     
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleOuter})
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleButton})
     
     local toggleInner = create("Frame", {
-        Parent = toggleOuter,
+        Parent = toggleButton,
         Size = UDim2.new(0, 16, 0, 16),
         Position = UDim2.new(0, 2, 0.5, -8),
         BackgroundColor3 = defaultValue and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(120, 120, 120),
@@ -260,6 +278,7 @@ function StellarixUI:AddToggle(name, defaultValue, callback)
     local state = defaultValue
     
     local function updateToggle()
+        if self.destroyed then return end
         local targetPos = state and UDim2.new(0, 22, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
         local targetColor = state and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(120, 120, 120)
         
@@ -269,7 +288,8 @@ function StellarixUI:AddToggle(name, defaultValue, callback)
         }):Play()
     end
     
-    toggleOuter.MouseButton1Click:Connect(function()
+    toggleButton.MouseButton1Click:Connect(function()
+        if self.destroyed then return end
         state = not state
         updateToggle()
         if callback then callback(state) end
@@ -277,11 +297,11 @@ function StellarixUI:AddToggle(name, defaultValue, callback)
     
     updateToggle()
     tab.yOffset = yPos + 35
-    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, tab.yOffset)
     
     local toggleObj = {
         GetState = function() return state end,
         SetState = function(value)
+            if self.destroyed then return end
             state = value
             updateToggle()
             if callback then callback(state) end
@@ -293,7 +313,7 @@ function StellarixUI:AddToggle(name, defaultValue, callback)
 end
 
 function StellarixUI:AddSlider(name, min, max, default, callback)
-    if not self.currentTab then return end
+    if self.destroyed or not self.currentTab then return end
     
     local tab = self.tabs[self.currentTab]
     local yPos = tab.yOffset
@@ -316,12 +336,14 @@ function StellarixUI:AddSlider(name, min, max, default, callback)
         TextXAlignment = Enum.TextXAlignment.Left
     })
     
-    local sliderBg = create("Frame", {
+    local sliderBg = create("TextButton", {
         Parent = sliderFrame,
         Size = UDim2.new(1, 0, 0, 6),
         Position = UDim2.new(0, 0, 0, 30),
         BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-        BorderSizePixel = 0
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false
     })
     
     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = sliderBg})
@@ -350,6 +372,7 @@ function StellarixUI:AddSlider(name, min, max, default, callback)
     local dragging = false
     
     local function updateSlider(val)
+        if self.destroyed then return end
         value = math.clamp(math.floor(val), min, max)
         local fill = (value - min) / (max - min)
         
@@ -362,6 +385,7 @@ function StellarixUI:AddSlider(name, min, max, default, callback)
     end
     
     local function onInput(input)
+        if self.destroyed then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
         end
@@ -378,7 +402,12 @@ function StellarixUI:AddSlider(name, min, max, default, callback)
     sliderButton.InputBegan:Connect(onInput)
     sliderButton.InputEnded:Connect(onInputEnd)
     
-    UserInputService.InputChanged:Connect(function(input)
+    local connection
+    connection = UserInputService.InputChanged:Connect(function(input)
+        if self.destroyed then
+            connection:Disconnect()
+            return
+        end
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mouse = UserInputService:GetMouseLocation()
             local absPos = sliderBg.AbsolutePosition
@@ -389,11 +418,13 @@ function StellarixUI:AddSlider(name, min, max, default, callback)
     end)
     
     tab.yOffset = yPos + 55
-    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, tab.yOffset)
     
     local sliderObj = {
         GetValue = function() return value end,
-        SetValue = function(val) updateSlider(val) end
+        SetValue = function(val) 
+            if self.destroyed then return end
+            updateSlider(val) 
+        end
     }
     
     table.insert(tab.elements, sliderObj)
@@ -401,7 +432,7 @@ function StellarixUI:AddSlider(name, min, max, default, callback)
 end
 
 function StellarixUI:AddDropdown(name, options, defaultIndex, callback)
-    if not self.currentTab then return end
+    if self.destroyed or not self.currentTab then return end
     
     local tab = self.tabs[self.currentTab]
     local yPos = tab.yOffset
@@ -432,27 +463,112 @@ function StellarixUI:AddDropdown(name, options, defaultIndex, callback)
         Text = options[defaultIndex] or "Select...",
         TextColor3 = Color3.fromRGB(200, 200, 200),
         TextSize = 12,
-        Font = Enum.Font.Gotham
+        Font = Enum.Font.Gotham,
+        AutoButtonColor = false
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = dropdownButton})
+    
+    local dropdownContent = create("Frame", {
+        Parent = dropdownFrame,
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        Size = UDim2.new(0.45, 0, 0, 0),
+        Position = UDim2.new(0.55, 0, 1, 5),
+        Visible = false,
+        ClipsDescendants = true
+    })
+    
+    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = dropdownContent})
     
     local dropdownOpen = false
     local selectedIndex = defaultIndex
     
     local function toggleDropdown()
+        if self.destroyed then return end
         dropdownOpen = not dropdownOpen
-        -- Здесь можно добавить логику для открытия/закрытия списка опций
+        
+        if dropdownOpen then
+            dropdownContent.Visible = true
+            TweenService:Create(dropdownContent, TweenInfo.new(0.2), {
+                Size = UDim2.new(0.45, 0, 0, math.min(#options * 25, 150))
+            }):Play()
+        else
+            TweenService:Create(dropdownContent, TweenInfo.new(0.2), {
+                Size = UDim2.new(0.45, 0, 0, 0)
+            }):Play()
+            wait(0.2)
+            dropdownContent.Visible = false
+        end
+    end
+    
+    local function selectOption(index, value)
+        if self.destroyed then return end
+        selectedIndex = index
+        dropdownButton.Text = value
+        toggleDropdown()
+        if callback then callback(index, value) end
+    end
+    
+    -- Создаем опции
+    for i, option in ipairs(options) do
+        local optionButton = create("TextButton", {
+            Parent = dropdownContent,
+            Size = UDim2.new(1, 0, 0, 25),
+            Position = UDim2.new(0, 0, 0, (i-1)*25),
+            BackgroundColor3 = i == defaultIndex and Color3.fromRGB(50, 50, 70) or Color3.fromRGB(40, 40, 40),
+            Text = option,
+            TextColor3 = Color3.fromRGB(200, 200, 200),
+            TextSize = 12,
+            Font = Enum.Font.Gotham,
+            AutoButtonColor = false
+        })
+        
+        optionButton.MouseButton1Click:Connect(function()
+            selectOption(i, option)
+        end)
+        
+        optionButton.MouseEnter:Connect(function()
+            if self.destroyed then return end
+            if i ~= selectedIndex then
+                optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            end
+        end)
+        
+        optionButton.MouseLeave:Connect(function()
+            if self.destroyed then return end
+            if i ~= selectedIndex then
+                optionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            end
+        end)
     end
     
     dropdownButton.MouseButton1Click:Connect(toggleDropdown)
     
+    -- Закрываем dropdown при клике вне его
+    local dropdownConnection
+    dropdownConnection = UserInputService.InputBegan:Connect(function(input)
+        if self.destroyed then
+            dropdownConnection:Disconnect()
+            return
+        end
+        if dropdownOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = UserInputService:GetMouseLocation()
+            local absPos = dropdownContent.AbsolutePosition
+            local absSize = dropdownContent.AbsoluteSize
+            
+            if not (mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
+                   mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y) then
+                toggleDropdown()
+            end
+        end
+    end)
+    
     tab.yOffset = yPos + 35
-    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, tab.yOffset)
     
     local dropdownObj = {
         GetValue = function() return selectedIndex end,
         SetValue = function(index)
+            if self.destroyed then return end
             if options[index] then
                 selectedIndex = index
                 dropdownButton.Text = options[index]
@@ -466,7 +582,7 @@ function StellarixUI:AddDropdown(name, options, defaultIndex, callback)
 end
 
 function StellarixUI:AddColorPicker(name, defaultColor, callback)
-    if not self.currentTab then return end
+    if self.destroyed or not self.currentTab then return end
     
     local tab = self.tabs[self.currentTab]
     local yPos = tab.yOffset
@@ -489,19 +605,21 @@ function StellarixUI:AddColorPicker(name, defaultColor, callback)
         TextXAlignment = Enum.TextXAlignment.Left
     })
     
-    local colorPreview = create("Frame", {
+    local colorButton = create("TextButton", {
         Parent = colorFrame,
         Size = UDim2.new(0, 40, 0, 20),
         Position = UDim2.new(0.8, 0, 0.5, -10),
         BackgroundColor3 = defaultColor,
-        BorderSizePixel = 0
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false
     })
     
-    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = colorPreview})
+    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = colorButton})
     
     -- Gradient effect
     local gradient = create("UIGradient", {
-        Parent = colorPreview,
+        Parent = colorButton,
         Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, defaultColor),
             ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
@@ -511,11 +629,12 @@ function StellarixUI:AddColorPicker(name, defaultColor, callback)
     
     local currentColor = defaultColor
     
-    colorPreview.MouseButton1Click:Connect(function()
+    colorButton.MouseButton1Click:Connect(function()
+        if self.destroyed then return end
         -- Здесь можно реализовать полноценный color picker
         local newColor = Color3.fromHSV(math.random(), 1, 1)
         currentColor = newColor
-        colorPreview.BackgroundColor3 = newColor
+        colorButton.BackgroundColor3 = newColor
         gradient.Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, newColor),
             ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
@@ -524,13 +643,13 @@ function StellarixUI:AddColorPicker(name, defaultColor, callback)
     end)
     
     tab.yOffset = yPos + 35
-    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, tab.yOffset)
     
     local colorObj = {
         GetColor = function() return currentColor end,
         SetColor = function(color)
+            if self.destroyed then return end
             currentColor = color
-            colorPreview.BackgroundColor3 = color
+            colorButton.BackgroundColor3 = color
             gradient.Color = ColorSequence.new({
                 ColorSequenceKeypoint.new(0, color),
                 ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
@@ -544,7 +663,7 @@ function StellarixUI:AddColorPicker(name, defaultColor, callback)
 end
 
 function StellarixUI:AddTextBox(name, defaultText, callback)
-    if not self.currentTab then return end
+    if self.destroyed or not self.currentTab then return end
     
     local tab = self.tabs[self.currentTab]
     local yPos = tab.yOffset
@@ -582,15 +701,18 @@ function StellarixUI:AddTextBox(name, defaultText, callback)
     create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = textBox})
     
     textBox.FocusLost:Connect(function()
+        if self.destroyed then return end
         if callback then callback(textBox.Text) end
     end)
     
     tab.yOffset = yPos + 45
-    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, tab.yOffset)
     
     local textObj = {
         GetText = function() return textBox.Text end,
-        SetText = function(text) textBox.Text = text end
+        SetText = function(text) 
+            if self.destroyed then return end
+            textBox.Text = text 
+        end
     }
     
     table.insert(tab.elements, textObj)
@@ -598,7 +720,7 @@ function StellarixUI:AddTextBox(name, defaultText, callback)
 end
 
 function StellarixUI:AddButton(name, callback)
-    if not self.currentTab then return end
+    if self.destroyed or not self.currentTab then return end
     
     local tab = self.tabs[self.currentTab]
     local yPos = tab.yOffset
@@ -611,24 +733,37 @@ function StellarixUI:AddButton(name, callback)
         Text = name,
         TextColor3 = Color3.fromRGB(200, 200, 200),
         TextSize = 15,
-        Font = Enum.Font.Gotham
+        Font = Enum.Font.Gotham,
+        AutoButtonColor = false
     })
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = button})
     
     button.MouseButton1Click:Connect(function()
+        if self.destroyed then return end
         if callback then callback() end
     end)
     
+    button.MouseEnter:Connect(function()
+        if self.destroyed then return end
+        button.BackgroundColor3 = Color3.fromRGB(25, 18, 28)
+    end)
+    
+    button.MouseLeave:Connect(function()
+        if self.destroyed then return end
+        button.BackgroundColor3 = Color3.fromRGB(18, 12, 20)
+    end)
+    
     tab.yOffset = yPos + 41
-    tab.scroll.CanvasSize = UDim2.new(0, 0, 0, tab.yOffset)
     
     return button
 end
 
--- ИСПРАВЛЕННАЯ СИСТЕМА КОНФИГОВ
 function StellarixUI:AddConfigSystem()
+    if self.destroyed then return end
+    
     local configTab = self:AddTab("Config", "Config")
+    self:SwitchTab("Config")
     
     -- Config controls
     local controlsFrame = create("Frame", {
@@ -658,6 +793,7 @@ function StellarixUI:AddConfigSystem()
     })
     
     local configTextBox = create("TextBox", {
+        Name = "ConfigNameTextBox",
         Parent = textFrame,
         Size = UDim2.new(1, 0, 0, 25),
         Position = UDim2.new(0, 0, 0, 20),
@@ -672,44 +808,31 @@ function StellarixUI:AddConfigSystem()
     create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = configTextBox})
     
     -- Кнопки управления конфигами
-    local saveBtn = create("TextButton", {
-        Parent = controlsFrame,
-        Size = UDim2.new(1, 0, 0, 36),
-        Position = UDim2.new(0, 0, 0, 50),
-        BackgroundColor3 = Color3.fromRGB(18, 12, 20),
-        Text = "Save",
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 15,
-        Font = Enum.Font.Gotham
-    })
+    local saveBtn = self:AddButton("Save", function()
+        if self.destroyed then return end
+        local configName = configTextBox.Text
+        if configName and configName ~= "" then
+            self:SaveConfig(configName)
+            self:UpdateConfigList(configList)
+        end
+    end)
     
-    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = saveBtn})
+    local loadBtn = self:AddButton("Load", function()
+        if self.destroyed then return end
+        local configName = configTextBox.Text
+        if configName and configName ~= "" then
+            self:LoadConfig(configName)
+        end
+    end)
     
-    local loadBtn = create("TextButton", {
-        Parent = controlsFrame,
-        Size = UDim2.new(1, 0, 0, 36),
-        Position = UDim2.new(0, 0, 0, 91),
-        BackgroundColor3 = Color3.fromRGB(18, 12, 20),
-        Text = "Load",
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 15,
-        Font = Enum.Font.Gotham
-    })
-    
-    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = loadBtn})
-    
-    local deleteBtn = create("TextButton", {
-        Parent = controlsFrame,
-        Size = UDim2.new(1, 0, 0, 36),
-        Position = UDim2.new(0, 0, 0, 132),
-        BackgroundColor3 = Color3.fromRGB(18, 12, 20),
-        Text = "Delete",
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 15,
-        Font = Enum.Font.Gotham
-    })
-    
-    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = deleteBtn})
+    local deleteBtn = self:AddButton("Delete", function()
+        if self.destroyed then return end
+        local configName = configTextBox.Text
+        if configName and configName ~= "" then
+            self:DeleteConfig(configName)
+            self:UpdateConfigList(configList)
+        end
+    end)
     
     -- Config list
     local configList = create("ScrollingFrame", {
@@ -723,35 +846,13 @@ function StellarixUI:AddConfigSystem()
     
     create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = configList})
     
-    -- Обработчики кнопок
-    saveBtn.MouseButton1Click:Connect(function()
-        local configName = configTextBox.Text
-        if configName and configName ~= "" then
-            self:SaveConfig(configName)
-            self:UpdateConfigList(configList)
-        end
-    end)
-    
-    loadBtn.MouseButton1Click:Connect(function()
-        local configName = configTextBox.Text
-        if configName and configName ~= "" then
-            self:LoadConfig(configName)
-        end
-    end)
-    
-    deleteBtn.MouseButton1Click:Connect(function()
-        local configName = configTextBox.Text
-        if configName and configName ~= "" then
-            self:DeleteConfig(configName)
-            self:UpdateConfigList(configList)
-        end
-    end)
-    
     -- Заполняем список конфигов
     self:UpdateConfigList(configList)
 end
 
 function StellarixUI:UpdateConfigList(configList)
+    if self.destroyed then return end
+    
     -- Очищаем список
     for _, child in ipairs(configList:GetChildren()) do
         if child:IsA("Frame") then
@@ -759,13 +860,23 @@ function StellarixUI:UpdateConfigList(configList)
         end
     end
     
+    local configNames = {}
+    for name, _ in pairs(self.configs) do
+        table.insert(configNames, name)
+    end
+    
+    -- Сортируем имена конфигов
+    table.sort(configNames)
+    
     local yOffset = 0
-    for configName, _ in pairs(self.configs) do
-        local configItem = create("Frame", {
+    for _, configName in ipairs(configNames) do
+        local configItem = create("TextButton", {
             Parent = configList,
             BackgroundColor3 = Color3.fromRGB(12, 12, 12),
             Size = UDim2.new(1, -10, 0, 30),
-            Position = UDim2.new(0, 5, 0, yOffset)
+            Position = UDim2.new(0, 5, 0, yOffset),
+            Text = "",
+            AutoButtonColor = false
         })
         
         create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = configItem})
@@ -783,11 +894,22 @@ function StellarixUI:UpdateConfigList(configList)
         })
         
         configItem.MouseButton1Click:Connect(function()
-            -- Заполняем текстовое поле при клике на конфиг
-            local textBox = configList.Parent.Parent:FindFirstChild("Config Name", true)
+            if self.destroyed then return end
+            -- Находим TextBox по имени
+            local textBox = configList.Parent:FindFirstChild("ConfigNameTextBox", true)
             if textBox and textBox:IsA("TextBox") then
                 textBox.Text = configName
             end
+        end)
+        
+        configItem.MouseEnter:Connect(function()
+            if self.destroyed then return end
+            configItem.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        end)
+        
+        configItem.MouseLeave:Connect(function()
+            if self.destroyed then return end
+            configItem.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
         end)
         
         yOffset = yOffset + 35
@@ -797,6 +919,8 @@ function StellarixUI:UpdateConfigList(configList)
 end
 
 function StellarixUI:SaveConfig(name)
+    if self.destroyed then return end
+    
     local configData = {}
     for tabName, tab in pairs(self.tabs) do
         configData[tabName] = {}
@@ -818,6 +942,8 @@ function StellarixUI:SaveConfig(name)
 end
 
 function StellarixUI:LoadConfig(name)
+    if self.destroyed then return end
+    
     if self.configs[name] then
         for tabName, tabData in pairs(self.configs[name]) do
             if self.tabs[tabName] then
@@ -844,6 +970,7 @@ function StellarixUI:LoadConfig(name)
 end
 
 function StellarixUI:DeleteConfig(name)
+    if self.destroyed then return end
     self.configs[name] = nil
     print("Config deleted:", name)
 end
@@ -852,7 +979,8 @@ function StellarixUI:SetupDragging()
     local dragging = false
     local dragStart, startPos
 
-    self.mainFrame.InputBegan:Connect(function(input)
+    self.topBar.InputBegan:Connect(function(input)
+        if self.destroyed then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
@@ -860,13 +988,18 @@ function StellarixUI:SetupDragging()
         end
     end)
 
-    self.mainFrame.InputEnded:Connect(function(input)
+    self.topBar.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
+    local connection
+    connection = UserInputService.InputChanged:Connect(function(input)
+        if self.destroyed then
+            connection:Disconnect()
+            return
+        end
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
             self.mainFrame.Position = UDim2.new(
@@ -878,7 +1011,12 @@ function StellarixUI:SetupDragging()
 end
 
 function StellarixUI:BindToggleKey()
-    UserInputService.InputBegan:Connect(function(input, processed)
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input, processed)
+        if self.destroyed then
+            connection:Disconnect()
+            return
+        end
         if processed then return end
         if input.KeyCode == self.config.toggleKey then
             self:Toggle()
@@ -887,19 +1025,26 @@ function StellarixUI:BindToggleKey()
 end
 
 function StellarixUI:Toggle()
+    if self.destroyed then return end
     self.mainFrame.Visible = not self.mainFrame.Visible
 end
 
 function StellarixUI:Show()
+    if self.destroyed then return end
     self.mainFrame.Visible = true
 end
 
 function StellarixUI:Hide()
+    if self.destroyed then return end
     self.mainFrame.Visible = false
 end
 
 function StellarixUI:Destroy()
-    self.gui:Destroy()
+    if self.destroyed then return end
+    self.destroyed = true
+    if self.gui then
+        self.gui:Destroy()
+    end
 end
 
 return StellarixUI
