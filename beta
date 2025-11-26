@@ -1,44 +1,210 @@
--- Пример использования
-local LOLSENSE = require(script.Parent.LOLSENSE_Library) -- путь к вашему скрипту
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+repeat task.wait() until LocalPlayer:FindFirstChild("PlayerGui")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local UIS = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
--- Инициализация
-LOLSENSE:Init({
-    title = "My Awesome UI"
-})
+local IS_MOBILE = UIS.TouchEnabled
+local IS_DESKTOP = not IS_MOBILE
+local KEYBIND = IS_DESKTOP and Enum.KeyCode.RightShift or nil
 
--- Создание вкладки
-local CombatTab = LOLSENSE:CreateTab("Combat")
+local Screen = Instance.new("ScreenGui")
+Screen.IgnoreGuiInset = true
+Screen.ResetOnSpawn = false
+Screen.ZIndexBehavior = Enum.ZIndexBehavior.Global
+Screen.Name = "EmoteGUI"
+Screen.Parent = PlayerGui
 
--- Создание секции
-local aimbotSection = LOLSENSE:CreateSection(CombatTab, "Aimbot Features")
+local GUI_WIDTH = IS_MOBILE and 350 or 480
+local GUI_HEIGHT = IS_MOBILE and 400 or 520
+local GUI_POS_X = IS_MOBILE and 0.5 or 0.5
+local GUI_POS_Y = IS_MOBILE and 0.5 or 0.5
 
--- Добавление чекбокса
-local aimbotToggle, setAimbot = LOLSENSE:CreateCheckbox(aimbotSection, "Enable Aimbot", function(state)
-    print("Aimbot:", state and "ON" or "OFF")
-    -- Ваш код здесь
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, GUI_WIDTH, 0, GUI_HEIGHT)
+Frame.Position = UDim2.new(GUI_POS_X, -GUI_WIDTH/2, GUI_POS_Y, -GUI_HEIGHT/2)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Visible = false
+Frame.Parent = Screen
+
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 16)
+
+local outline = Instance.new("UIStroke", Frame)
+outline.Thickness = 2
+
+task.spawn(function()
+    while true do
+        for i = 0, 1, 0.02 do
+            outline.Color = Color3.fromHSV(0.78, 1, 0.4 + i*0.6)
+            task.wait(0.05)
+        end
+        for i = 1, 0, -0.02 do
+            outline.Color = Color3.fromHSV(0.78, 1, 0.4 + i*0.6)
+            task.wait(0.05)
+        end
+    end
 end)
 
--- Добавление кнопки
-LOLSENSE:CreateButton(aimbotSection, "Teleport to Target", function()
-    print("Teleporting...")
-    -- Ваш код здесь
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -50, 0, 28)
+Title.Position = UDim2.new(0, 10, 0, 10)
+Title.Text = IS_MOBILE and "🎭" or "Emote menu"
+Title.TextColor3 = Color3.fromRGB(180, 120, 255)
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = IS_MOBILE and 16 or 18
+Title.Parent = Frame
+
+local Search = Instance.new("TextBox")
+Search.Size = UDim2.new(1, -20, 0, IS_MOBILE and 32 or 38)
+Search.Position = UDim2.new(0, 10, 0, IS_MOBILE and 45 or 50)
+Search.PlaceholderText = "Search"
+Search.TextColor3 = Color3.new(1,1,1)
+Search.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Search.Font = Enum.Font.Gotham
+Search.TextSize = IS_MOBILE and 12 or 14
+Search.Parent = Frame
+Instance.new("UICorner", Search).CornerRadius = UDim.new(0, 10)
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1, -20, 1, IS_MOBILE and -80 or -100)
+Scroll.Position = UDim2.new(0, 10, 0, IS_MOBILE and 85 or 95)
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
+Scroll.ScrollBarThickness = IS_MOBILE and 4 or 6
+Scroll.BackgroundTransparency = 1
+Scroll.Parent = Frame
+
+local List = Instance.new("UIListLayout", Scroll)
+List.Padding = UDim.new(0, IS_MOBILE and 4 or 6)
+List.SortOrder = Enum.SortOrder.LayoutOrder
+
+local Emotes = {
+"Abducted","AirBend","AngelFloat","AngryStomping","Assumptions","BananaPeel","Basket","BasketballHoop","Bayside","B-hop","BirdBrain","Blush","Bow","BrazilianLuffy","Breakdance","BunnyHop",
+"ButterflyKnifeSpin","California","CannonBall","Caramelldansen","ChadFlexing","Chilling","Collapse","CoffinDance","Conga","ConductorWand","CopWithGun","CrissCross","CupidsBow","CuteSelfie",
+"Dab","DefaultDance","DeagleSpin","DefibrillatorFloat","DiaDelicia","Dizzy","DJBooth","DracoShots","EarFloat","EarthBend","Facepalm","FieryFloat","FiftyCal","FireBend","Flare","Flex","Float",
+"FunkedUp","GangnamStyle","Gasp","Glendo","Goblet","GoingDark","Goopie","Gravestone","Grenade","Griddy","GuitarSolo","Gun","Hakari","Hakken","HandsUp","HarmonicAscend","Haven","HeavenlyPray",
+"HeartGoesOut","Honk","HugoDance","ImmortalState","InfEmote","IYG","JumpingJacks","Jumpstyle","Juggling","Kazotsky","KeyboardRage","Kiss","Knighting","KnightKneel","Kneel","Laugh","Lay",
+"LayingOnChair","LockedIn","LunawareSturdy","MagicalGirl","Meditation","Melbourne","Microphone","Mime","Mixing","MoneySpread","Moonwalk","Mewwing","Nod","PewPew","Point","Ponder","PoseidonSit",
+"Pray","Pushup","PuppyEyes","RatDance","Runaway","SaltSprinkle","Salute","Scoreboard","SelfCrown","Selfie","Shy","SideLay","SigmaWalk","Sippin","Smelly","Stomp","Static","SusEmote","TakeTheL",
+"TailWiggle","Throne","TPose","ToxicLaugh","Trash","Trumpet","UFO","Violin","VineBoom","Wand","WaterBend","WaterGun","WaterWalk","Zap","Zelda","Heaven","StankyLeg","BlueWalk","HarlemShake",
+"JerseyShoot","MillyRock","NetspendSpread","Whip","Worm","Sturdy","Jetpack","Bird","Combust","Clanker","RobotDance","ShieldCover","SpearJump","SpearMartialArts","ThisIsSparta","SpartanHonor",
+"Territory","Medicine","VegetableJuice","Polkka","Tetoris","RetryNow","LemonMelonCookie","LovelyCavity","Mesmerizer","Monitoring","SkeletonOrchestra","PrincessBubble","PrincessThrone",
+"PrincessWave","Curtsey","Tea","ZombieWalk","VampireSleep","Thriller","SpookyScarySkeletons","Mummy","Tank","Artillery","Marching","BulletSlowMo","SlowMoExplosion","Rune","CoinPull",
+"GlowingBall","FireBreathe","Spell"
+}
+table.sort(Emotes, function(a,b) return a:lower() < b:lower() end)
+local Categories = {}
+for _, em in ipairs(Emotes) do
+    local L = string.upper(em:sub(1,1))
+    Categories[L] = Categories[L] or {}
+    table.insert(Categories[L], em)
+end
+
+local function updateScroll()
+    Scroll.CanvasSize = UDim2.new(0,0,0,List.AbsoluteContentSize.Y + 20)
+end
+local TITLE_HEIGHT = IS_MOBILE and 22 or 26
+local BUTTON_HEIGHT = IS_MOBILE and 26 or 30
+local BUTTON_TEXT_SIZE = IS_MOBILE and 11 or 14
+
+for letter in pairs(Categories) do
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 0, TITLE_HEIGHT)
+    Title.Text = "— " .. letter .. " —"
+    Title.TextColor3 = Color3.fromRGB(180, 130, 255)
+    Title.Font = Enum.Font.GothamBold
+    Title.BackgroundTransparency = 1
+    Title.TextSize = IS_MOBILE and 12 or 14
+    Title.TextScaled = false
+    Title.Parent = Scroll
+
+    for _, em in ipairs(Categories[letter]) do
+        local Btn = Instance.new("TextButton")
+        Btn.Name = em
+        Btn.Size = UDim2.new(1, -10, 0, BUTTON_HEIGHT)
+        Btn.BackgroundColor3 = Color3.fromRGB(40, 30, 60)
+        Btn.Text = em
+        Btn.TextColor3 = Color3.new(1,1,1)
+        Btn.Font = Enum.Font.Gotham
+        Btn.TextSize = BUTTON_TEXT_SIZE
+        Btn.TextScaled = IS_MOBILE
+        Btn.Parent = Scroll
+        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+        Btn.MouseButton1Click:Connect(function()
+            ReplicatedStorage.Features.Emotes.PlayEmote:Fire(em)
+            if IS_MOBILE then
+                Frame.Visible = false
+            end
+        end)
+    end
+end
+updateScroll()
+
+Search:GetPropertyChangedSignal("Text"):Connect(function()
+    local q = Search.Text:lower()
+
+    for _, obj in ipairs(Scroll:GetChildren()) do
+        if obj:IsA("TextLabel") then
+            obj.Visible = (q == "")
+        elseif obj:IsA("TextButton") then
+            obj.Visible = obj.Name:lower():find(q) ~= nil
+        end
+    end
+
+    updateScroll()
 end)
 
--- Добавление биндов
-local getAimbotState = LOLSENSE:AddBind("Aimbot", "K", "Toggle")
-local getESPState = LOLSENSE:AddBind("ESP", "L", "Hold")
+if IS_DESKTOP then
+    UIS.InputBegan:Connect(function(k,gpe)
+        if not gpe and k.KeyCode == KEYBIND then
+            Frame.Visible = not Frame.Visible
+        end
+    end)
+end
 
--- Использование биндов в игровой логике
-game:GetService("RunService").RenderStepped:Connect(function()
-    if LOLSENSE:GetBindState("Aimbot") then
-        -- Код aimbot
+if IS_MOBILE then
+    local Open = Instance.new("TextButton")
+    Open.Size = UDim2.new(0, 50, 0, 50) 
+    Open.Position = UDim2.new(1, -60, 1, -60)
+    Open.Text = "MENU"
+    Open.TextColor3 = Color3.new(1,1,1)
+    Open.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
+    Open.TextSize = 18
+    Open.ZIndex = 10
+    Open.Parent = Screen
+    Instance.new("UICorner", Open).CornerRadius = UDim.new(0, 12)
+
+    Open.MouseButton1Click:Connect(function()
+        Frame.Visible = not Frame.Visible
+    end)
+    Open.MouseButton1Down:Connect(function()
+        TweenService:Create(Open, TweenInfo.new(0.1), {Size = UDim2.new(0, 45, 0, 45)}):Play()
+    end)
+    
+    Open.MouseButton1Up:Connect(function()
+        TweenService:Create(Open, TweenInfo.new(0.1), {Size = UDim2.new(0, 50, 0, 50)}):Play()
+    end)
+    local function updateMobileSize()
+        local viewport = workspace.CurrentCamera.ViewportSize
+        local isPortrait = viewport.Y > viewport.X
+        
+        if isPortrait then
+           
+            Frame.Size = UDim2.new(0, 320, 0, 380)
+        else
+           
+            Frame.Size = UDim2.new(0, 350, 0, 350)
+        end
+        
+        Frame.Position = UDim2.new(0.5, -Frame.Size.X.Offset/2, 0.5, -Frame.Size.Y.Offset/2)
     end
     
-    if LOLSENSE:GetBindState("ESP") then
-        -- Код ESP
-    end
-end)
-
--- Управление видимостью UI
-LOLSENSE:SetVisible(true) -- Показать
-LOLSENSE:ToggleVisible()  -- Переключить видимость
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateMobileSize)
+    updateMobileSize()
+end
