@@ -52,7 +52,7 @@ end)
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -50, 0, 28)
 Title.Position = UDim2.new(0, 10, 0, 10)
-Title.Text = IS_MOBILE and "🎭" or "Emote menu"
+Title.Text = "Emote menu"
 Title.TextColor3 = Color3.fromRGB(180, 120, 255)
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
