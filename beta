@@ -14,7 +14,7 @@ local Screen = Instance.new("ScreenGui")
 Screen.IgnoreGuiInset = true
 Screen.ResetOnSpawn = false
 Screen.ZIndexBehavior = Enum.ZIndexBehavior.Global
-Screen.Name = "EmoteGUI"
+Screen.Name = "w2"
 Screen.Parent = PlayerGui
 
 local GUI_WIDTH = IS_MOBILE and 350 or 480
