@@ -5009,8 +5009,8 @@ do
                     local scale = Instance.new('UIScale') do 
                         scale.Scale = 1 
                         scale.Name = '#scale'
-                        scale.Parent = main
-                                        end
+                        scale.Parent = main --хуйхуйхуйхуйхуй
+                    end
                     local backgroundFrame = Instance.new('Frame') do 
                         backgroundFrame.BackgroundTransparency = 0 
                         backgroundFrame.BackgroundColor3 = theme.Window2
