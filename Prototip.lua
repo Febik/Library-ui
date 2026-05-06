@@ -1,11 +1,3 @@
---[[
-    Современная UI библиотека для Roblox
-    - Полная поддержка блюра (размытия фона)
-    - Видимая системная мышь (кастомный курсор удалён)
-    - Плоский, минималистичный дизайн с мягкими тенями и скруглениями
-    - Анимированные переходы, ховер-эффекты
-    - Обновлённые компоненты: тогглы, слайдеры, дропдауны, кнопки
---]]
 
 local library = { 
     flags = { }, 
@@ -52,8 +44,6 @@ library.theme = {
     buttoncolor2 = Color3.fromRGB(40, 40, 52),
     itemscolor = Color3.fromRGB(210, 210, 225),
     itemscolor2 = Color3.fromRGB(230, 230, 245),
-    blur_enabled = true,  -- включить блюр
-    blur_intensity = 12,  -- сила размытия (чем больше, тем сильнее)
     corner_radius = 8,    -- радиус скругления углов
     shadow_enabled = true, -- добавить мягкую тень
 }
@@ -80,24 +70,6 @@ local function applyShadow(instance, enabled)
 end
 
 -- Функция создания блюра на фоне
-local function createBlur(parent, intensity)
-    if not library.theme.blur_enabled then return nil end
-    local blur = Instance.new("Frame")
-    blur.Size = UDim2.new(1, 0, 1, 0)
-    blur.BackgroundTransparency = 1
-    blur.BorderSizePixel = 0
-    blur.Parent = parent
-    local bgBlur = Instance.new("BackgroundBlur")
-    bgBlur.Size = 1
-    bgBlur.Enabled = true
-    bgBlur.Parent = blur
-    bgBlur.Visible = true
-    -- интенсивность регулируется через свойство BackgroundBlur? На самом деле Intensity не стандарт, но в Roblox есть свойство "Blur" для ScreenGui?
-    -- Используем BackgroundBlur без параметров; интенсивность зависит от размера объекта.
-    -- Для простоты оставим стандартное размытие, оно достаточно приятное.
-    return blur
-end
-
 -- Создание водяного знака (стиль обновлён)
 function library:CreateWatermark(name, position)
     local gamename = marketplaceservice:GetProductInfo(game.PlaceId).Name
@@ -204,9 +176,7 @@ function library:CreateWindow(name, size, hidebutton)
     getgenv().uilib = window.Main
 
     -- Блюр фон
-    if window.theme.blur_enabled then
-        window.BlurLayer = createBlur(window.Main, window.theme.blur_intensity)
-    end
+  
 
     -- Drag logic (оставляем как было)
     local dragging, dragInput, dragStart, startPos
@@ -253,7 +223,6 @@ function library:CreateWindow(name, size, hidebutton)
     uis.InputBegan:Connect(function(key)
         if key.KeyCode == window.hidebutton then
             window.Frame.Visible = not window.Frame.Visible
-            if window.BlurLayer then window.BlurLayer.Visible = window.Frame.Visible end
         end
     end)
 
