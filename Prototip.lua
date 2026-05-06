@@ -5009,8 +5009,8 @@ do
                     local scale = Instance.new('UIScale') do 
                         scale.Scale = 1 
                         scale.Name = '#scale'
-                        scale.Parent = main --хуйхуйхуйхуйхуй
-                    end
+                        scale.Parent = main
+                                        end
                     local backgroundFrame = Instance.new('Frame') do 
                         backgroundFrame.BackgroundTransparency = 0 
                         backgroundFrame.BackgroundColor3 = theme.Window2
@@ -6028,7 +6028,7 @@ do
                             table.insert(self.selectedValues, opt)
                         end
                         checkIcon.Visible = not wasSelected
-                        local displayText = #self.selectedValues > 0 ? table.concat(self.selectedValues, ', ') : 'None'
+                        local displayText = (#self.selectedValues > 0) and table.concat(self.selectedValues, ', ') or 'None'
                         self.instances.label.Text = displayText
                         if (self.onSelectionChanged) then
                             self.onSelectionChanged(self.selectedValues)
@@ -6056,7 +6056,7 @@ do
                         end
                     end
                 end
-                local displayText = #self.selectedValues > 0 ? table.concat(self.selectedValues, ', ') : 'None'
+                local displayText = (#self.selectedValues > 0) and table.concat(self.selectedValues, ', ') or 'None'
                 self.instances.label.Text = displayText
                 if (self.onSelectionChanged) then
                     self.onSelectionChanged(self.selectedValues)
