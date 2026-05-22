@@ -1,0 +1,19 @@
+local Loader = require(script.Parent.ModuleScript)
+local UI = Loader.Init()
+local RP = game:GetService("ReplicatedStorage")
+local RS = game:GetService("RunService")
+local Camera = game:GetService("Workspace").CurrentCamera
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
+local PL = game:GetService("Players")
+local LPL = PL.LocalPlayer
+UI:Step("Checking Services", 1)
+
+UI:InitilizationDependencies(function()
+
+	UI:Step("Initilization", 2)
+
+	UI:Step("Loading", 3)
+
+	return true
+end)
