@@ -13,8 +13,12 @@ local util = {} do
         
         if instance:IsA("GuiObject") then 
             instance.BorderSizePixel = 0 
-            -- Добавляем скругление для большинства объектов
-            if options and options.BackgroundTransparency ~= 1 and options.CornerRadius == nil then
+            -- Добавляем скругление только для видимых объектов (не прозрачных полностью)
+            if options and options.BackgroundTransparency and options.BackgroundTransparency < 1 and options.CornerRadius == nil then
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(0, 4)
+                corner.Parent = instance
+            elseif options and (options.BackgroundTransparency == nil or options.BackgroundTransparency < 1) and options.CornerRadius == nil then
                 local corner = Instance.new("UICorner")
                 corner.CornerRadius = UDim.new(0, 4)
                 corner.Parent = instance
@@ -38,36 +42,32 @@ local util = {} do
         if not children then return instance end
 
         local toReturn = {instance}
-
         for i,v in pairs(children) do
             v.Parent = instance
             table.insert(toReturn, v)
         end
-
         return unpack(toReturn)
     end
 
     function util.children(parent, children)
         local toReturn = {}
-
         for _,child in pairs(children) do
             child.Parent = parent
             table.insert(toReturn, child)
         end
-
         return unpack(toReturn)
     end
 
     function util.tween(instance, properties, duration, style)
+        if not instance:IsA("GuiObject") then return end  -- Исправление ошибки: не анимировать UICorner и пр.
         style = style or Enum.EasingStyle.Quad
         TweenService:Create(instance, TweenInfo.new(duration, style, Enum.EasingDirection.Out), properties):Play()
     end
 
     function util.addShadow(instance, size, transparency)
-        local shadow = Instance.new("UICorner")
-        shadow.CornerRadius = UDim.new(0, 8)
-        shadow.Parent = instance
-        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 8)
+        corner.Parent = instance
         local stroke = Instance.new("UIStroke")
         stroke.Color = Color3.fromRGB(0, 0, 0)
         stroke.Transparency = 0.5
@@ -88,21 +88,21 @@ interactable.__index = interactable
 
 --//Modern Theme
 local theme = getgenv().theme or {
-    BackColor = Color3.fromRGB(18, 18, 24),           -- основной фон окна (глубокий тёмный)
-    TopBar = Color3.fromRGB(28, 28, 36),              -- верхняя панель
-    UpperContainer = Color3.fromRGB(24, 24, 32),      -- фон контейнера вкладок
-    InnerContainer = Color3.fromRGB(32, 32, 42),      -- фон панелей
-    InteractableBackground = Color3.fromRGB(40, 40, 52), -- фон элементов
-    InteractableOutline = Color3.fromRGB(60, 60, 75),     -- обводка
-    Accent = Color3.fromRGB(98, 158, 255),            -- яркий голубой акцент
-    NotSelectedTab = Color3.fromRGB(55, 55, 70),      -- невыбранная вкладка
-    TextColor = Color3.fromRGB(235, 235, 245),        -- основной текст
-    SubTextColor = Color3.fromRGB(160, 165, 185),     -- второстепенный текст
-    ButtonTop = Color3.fromRGB(58, 65, 85),           -- верхний слой кнопки (градиент)
-    ButtonBottom = Color3.fromRGB(40, 45, 60),        -- нижний слой кнопки
-    SliderTrack = Color3.fromRGB(60, 60, 75),         -- трек слайдера
-    SliderFill = Color3.fromRGB(98, 158, 255),        -- заполнение слайдера
-    DropdownBg = Color3.fromRGB(35, 35, 48),          -- фон выпадающего списка
+    BackColor = Color3.fromRGB(18, 18, 24),
+    TopBar = Color3.fromRGB(28, 28, 36),
+    UpperContainer = Color3.fromRGB(24, 24, 32),
+    InnerContainer = Color3.fromRGB(32, 32, 42),
+    InteractableBackground = Color3.fromRGB(40, 40, 52),
+    InteractableOutline = Color3.fromRGB(60, 60, 75),
+    Accent = Color3.fromRGB(98, 158, 255),
+    NotSelectedTab = Color3.fromRGB(55, 55, 70),
+    TextColor = Color3.fromRGB(235, 235, 245),
+    SubTextColor = Color3.fromRGB(160, 165, 185),
+    ButtonTop = Color3.fromRGB(58, 65, 85),
+    ButtonBottom = Color3.fromRGB(40, 45, 60),
+    SliderTrack = Color3.fromRGB(60, 60, 75),
+    SliderFill = Color3.fromRGB(98, 158, 255),
+    DropdownBg = Color3.fromRGB(35, 35, 48),
 }
 
 --//Library
@@ -122,17 +122,6 @@ do
             })
         })
         
-        -- Создаём размытие фона (Blur) - опционально, если нужен эффект стекла
-        local blur = Instance.new("BlurEffect")
-        blur.Size = 8
-        blur.Enabled = false
-        blur.Parent = game:GetService("Lighting")
-        
-        MasterContainer:GetPropertyChangedSignal("Visible"):Connect(function()
-            blur.Enabled = MasterContainer.Visible
-        end)
-
-        -- Добавляем тень и скругление главному окну
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, 12)
         corner.Parent = MasterContainer
@@ -142,22 +131,15 @@ do
         shadow.Thickness = 2
         shadow.Parent = MasterContainer
 
-        --//Remove & Disconnect pre-existing UI's under same ID
         local preexisting = getgenv()[id]
         if preexisting then
-            for i,v in pairs(preexisting.connections) do
-                v:Disconnect()
-            end
+            for i,v in pairs(preexisting.connections) do v:Disconnect() end
             preexisting.GUI:Destroy()
         end
 
         local connections = {}
-        getgenv()[id] = {
-            connections = connections,
-            GUI = ScreenGui
-        }
+        getgenv()[id] = { connections = connections, GUI = ScreenGui }
 
-        --//Tip bar
         local TipBar = util.new("TextLabel", {
             Parent = MasterContainer,
             Size = UDim2.new(0,0,0,12),
@@ -173,7 +155,6 @@ do
         tipCorner.CornerRadius = UDim.new(0, 4)
         tipCorner.Parent = TipBar
 
-        --//Main containers
         local TopBarContainer, ContentContainer = util.children(MasterContainer, {
             util.new("Frame", {
                 Size = UDim2.new(1, 0, 0, 34),
@@ -192,7 +173,6 @@ do
         topCorner.CornerRadius = UDim.new(0, 8)
         topCorner.Parent = TopBarContainer
 
-        --//TopBar
         local TopBarTitle = util.children(TopBarContainer, {
             util.new("TextLabel", {
                 Text = title,
@@ -214,7 +194,6 @@ do
             Name = "Version"
         })
 
-        --//Content Containers
         local TabSelectContainer, TabContentContainer = util.children(ContentContainer, {
             util.new("Frame", {
                 Size = UDim2.new(0, 160, 1, -14),
@@ -247,7 +226,6 @@ do
             })
         })
 
-        --// Dragability
         local isDragging = false
         local draggingOffset
 
@@ -256,19 +234,14 @@ do
                 local mouse = input:GetMouseLocation() - inset
                 local topLeft = MasterContainer.AbsolutePosition
                 local bottomRight = topLeft + Vector2.new(MasterContainer.AbsoluteSize.X, 34)
-
-                if mouse.X > topLeft.X and mouse.X < bottomRight.X then
-                    if mouse.Y > topLeft.Y and mouse.Y < bottomRight.Y then
-                        isDragging = true
-                        draggingOffset = mouse - topLeft
-                    end
+                if mouse.X > topLeft.X and mouse.X < bottomRight.X and mouse.Y > topLeft.Y and mouse.Y < bottomRight.Y then
+                    isDragging = true
+                    draggingOffset = mouse - topLeft
                 end
             end
         end))
         table.insert(connections, input.InputEnded:Connect(function(inp, gpe)
-            if isDragging and inp.UserInputType == Enum.UserInputType.MouseButton1 and not gpe then
-                isDragging = false
-            end
+            if isDragging and inp.UserInputType == Enum.UserInputType.MouseButton1 and not gpe then isDragging = false end
         end))
         table.insert(connections, input.InputChanged:Connect(function(inp, gpe)
             if isDragging and inp.UserInputType == Enum.UserInputType.MouseMovement and not gpe then
@@ -277,7 +250,6 @@ do
             end
         end))
 
-        --// External click "signal"
         local externalClickFunctions = {}
         local function registerExternalClickFunction(f) table.insert(externalClickFunctions, f) end
         MasterContainer.InputBegan:Connect(function(inp, gpe)
@@ -314,7 +286,6 @@ do
 
     function library:AddConfigTab(folder, fileExtension)
         if not isfolder(folder) then makefolder(folder) end
-
         local updateList
         local function loadConfig(config)
             for _,tabTable in pairs(self.tabs) do
@@ -331,7 +302,6 @@ do
                 end
             end
         end
-
         local PanelOne, PanelTwo = self:AddTab("Configs", "Load settings instantly") do
             local Section = PanelOne:AddSeperator("Save configs") do
                 local configName = "Name"
@@ -351,14 +321,12 @@ do
                     end
                 })
             end
-
             local Section = PanelTwo:AddSeperator("Load configs") do
                 PanelTwo:AddButton({
                     title = "Refresh",
                     desc = "Button to refresh the config list from: workspace/"..folder,
                     callback = function() updateList() end
                 })
-
                 local ConfigBox = util.new("Frame", {
                     Parent = PanelTwo.PanelContainer,
                     Size = UDim2.new(1, -14, 5, 0),
@@ -404,7 +372,6 @@ do
                         TextYAlignment = Enum.TextYAlignment.Center,
                     })
                 })
-
                 local configElements = {}
                 updateList = function()
                     for i,v in pairs(configElements) do v:Destroy() end
@@ -442,32 +409,26 @@ do
         return self.visible
     end
 
-    function library:_ShowGUI()
-        self.MasterContainer:TweenSize(self.size, "Out", "Quad", 0.2, true)
-    end
-    function library:_HideGUI()
-        self.MasterContainer:TweenSize(UDim2.new(0, self.size.X.Offset, 0, 0), "In", "Quad", 0.2, true)
-    end
+    function library:_ShowGUI() self.MasterContainer:TweenSize(self.size, "Out", "Quad", 0.2, true) end
+    function library:_HideGUI() self.MasterContainer:TweenSize(UDim2.new(0, self.size.X.Offset, 0, 0), "In", "Quad", 0.2, true) end
 
     function library:SetKeybind(new) self.keybind = new return self.keybind end
 
     function library:_registerKeybind()
         local debounce = false
         table.insert(self._connections, input.InputBegan:Connect(function(inp, gpe)
-            if inp.UserInputType == Enum.UserInputType.Keyboard and not gpe then
-                if inp.KeyCode == self.keybind and not debounce then
-                    debounce = true
-                    self:ToggleGUI()
-                    task.wait(0.2)
-                    debounce = false
-                end
+            if inp.UserInputType == Enum.UserInputType.Keyboard and not gpe and inp.KeyCode == self.keybind and not debounce then
+                debounce = true
+                self:ToggleGUI()
+                task.wait(0.2)
+                debounce = false
             end
         end))
         return self
     end
 end
 
---//Tab
+--//Tab (без изменений, кроме вызова util.tween, который теперь защищён)
 do
     function tab.new(library, title, desc, id)
         local TabSelector, TabSelectorColour = util.new("TextButton", {
@@ -501,7 +462,6 @@ do
                 Name = "TopBarTitleDesc"
             })
         })
-
         local panels = {}
         local self = setmetatable({
             library = library,
@@ -511,7 +471,6 @@ do
             TabSelector = TabSelector,
             TabSelectorColour = TabSelectorColour,
         }, tab)
-
         panels[1] = panel.new(self, {
             Parent = library.TabContentContainer,
             Size = UDim2.new(0.5, -9, 1, -10),
@@ -532,7 +491,6 @@ do
             Visible = false,
             Name = "TabPanel2"
         }, 2)
-
         return self:_connections()
     end
 
@@ -544,9 +502,7 @@ do
         return self
     end
     function tab:_deselectOthers()
-        for _,tab in pairs(self.library.tabs) do
-            if tab ~= self then tab:deselect() end
-        end
+        for _,tab in pairs(self.library.tabs) do if tab ~= self then tab:deselect() end end
     end
     function tab:select()
         self.selected = true
@@ -562,9 +518,7 @@ do
 end
 
 --//Interactable
-do
-    function interactable.new() return setmetatable({}, interactable) end
-end
+do function interactable.new() return setmetatable({}, interactable) end end
 
 --//Panel
 do
