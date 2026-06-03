@@ -1,4 +1,3 @@
-```lua
 local RunService = game:GetService("RunService")
 local input = game:GetService("UserInputService")
 local mouse = game:GetService("Players").LocalPlayer:GetMouse()
@@ -1382,4 +1381,3 @@ do
 end
 
 return library
-```
